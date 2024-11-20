@@ -1,6 +1,26 @@
 # 前言
 
-这个lab大部分都不是自己写出来的，太难了，看的是[CSAPP datalab讲解](https://www.bilibili.com/video/BV183411k7VM/?spm_id_from=333.999.0.0&vd_source=c7a2228562ec56ca67689b8d47bb87ba)，讲的很好
+lab下载链接，[csapp.cs.cmu.edu](https://csapp.cs.cmu.edu/3e/labs.html)
+
+这个lab大部分都不是自己写出来的，看的是[CSAPP datalab讲解](https://www.bilibili.com/video/BV183411k7VM/?spm_id_from=333.999.0.0&vd_source=c7a2228562ec56ca67689b8d47bb87ba)，讲的很好
+
+可以写一个run.sh脚本方便运行
+
+```shell
+#/bin/bash
+make clean
+make
+./dlc bits.c
+./btest
+```
+
+dlc程序用来检查bits.c是否违反规则，`./dlc -e bits.c`可以查看每个函数的具体情况
+
+`make`还会生成ishow，fshow来查看整型和浮点数的表示，也可以看一看这两个的代码会更深入的理解整型和浮点数的表示
+
+出现下面情况是正常的
+
+![image-20241120165507802](https://s2.loli.net/2024/11/20/VtBLocz2ejusr3Q.png)
 
 # Rating: 1
 

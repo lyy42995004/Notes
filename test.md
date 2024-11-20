@@ -1,1 +1,0 @@
-![](C:/Users/42995004/AppData/Roaming/Typora/typora-user-images/image-20241120102936693.png)
