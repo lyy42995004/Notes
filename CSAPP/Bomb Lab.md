@@ -319,81 +319,146 @@ if (strings_not_equal(s, cmps))
    0x0000000000401100 <+12>:    mov    %rsp,%r13
    0x0000000000401103 <+15>:    mov    %rsp,%rsi
    0x0000000000401106 <+18>:    callq  0x40145c <read_six_numbers>
-   0x000000000040110b <+23>:    mov    %rsp,%r14
-   0x000000000040110e <+26>:    mov    $0x0,%r12d
+   0x000000000040110b <+23>:    mov    %rsp,%r14	# r14 = rsp
+   0x000000000040110e <+26>:    mov    $0x0,%r12d	# r12d = 0
    0x0000000000401114 <+32>:    mov    %r13,%rbp	# &num[i]
    0x0000000000401117 <+35>:    mov    0x0(%r13),%eax	# num[i]
    0x000000000040111b <+39>:    sub    $0x1,%eax	# num[i]--
-   0x000000000040111e <+42>:    cmp    $0x5,%eax	# num[i]>6爆炸
+   0x000000000040111e <+42>:    cmp    $0x5,%eax	# num[i]>7爆炸
    0x0000000000401121 <+45>:    jbe    0x401128 <phase_6+52>
    0x0000000000401123 <+47>:    callq  0x40143a <explode_bomb>
    0x0000000000401128 <+52>:    add    $0x1,%r12d	# r12++
    0x000000000040112c <+56>:    cmp    $0x6,%r12d	# r12==6跳出循环
    0x0000000000401130 <+60>:    je     0x401153 <phase_6+95>
-   0x0000000000401132 <+62>:    mov    %r12d,%ebx
-   0x0000000000401135 <+65>:    movslq %ebx,%rax
-   0x0000000000401138 <+68>:    mov    (%rsp,%rax,4),%eax	
-   0x000000000040113b <+71>:    cmp    %eax,0x0(%rbp)	# num[i]互不相等
+   0x0000000000401132 <+62>:    mov    %r12d,%ebx	# ebx = r12d
+   0x0000000000401135 <+65>:    movslq %ebx,%rax	# rax = ebx
+   0x0000000000401138 <+68>:    mov    (%rsp,%rax,4),%eax	# num[i+1]
+   0x000000000040113b <+71>:    cmp    %eax,0x0(%rbp)	# num[i]!=num[i+1]
    0x000000000040113e <+74>:    jne    0x401145 <phase_6+81>
    0x0000000000401140 <+76>:    callq  0x40143a <explode_bomb>
    0x0000000000401145 <+81>:    add    $0x1,%ebx	# ebx++
    0x0000000000401148 <+84>:    cmp    $0x5,%ebx	# ebx>5跳出循环
    0x000000000040114b <+87>:    jle    0x401135 <phase_6+65>
-   0x000000000040114d <+89>:    add    $0x4,%r13
+   0x000000000040114d <+89>:    add    $0x4,%r13	# rsp + 4
    0x0000000000401151 <+93>:    jmp    0x401114 <phase_6+32>
 ```
 
+```C
+for (int i = 0; i != 6; i++)
+{
+    if (num[i] > 7)
+        explode_bomb();
+    for (int j = i + 1; j <= 5; j++)
+    {
+        if (num[j] == num[i])
+            explode_bomb();
+    }
+}
+```
+
+这六个数都小于7，且互不相等
+
+
 ```assembly
-   0x0000000000401153 <+95>:    lea    0x18(%rsp),%rsi
-   0x0000000000401158 <+100>:   mov    %r14,%rax
-   0x000000000040115b <+103>:   mov    $0x7,%ecx
-   0x0000000000401160 <+108>:   mov    %ecx,%edx
-   0x0000000000401162 <+110>:   sub    (%rax),%edx
-   0x0000000000401164 <+112>:   mov    %edx,(%rax)
-   0x0000000000401166 <+114>:   add    $0x4,%rax
-   0x000000000040116a <+118>:   cmp    %rsi,%rax
+   0x0000000000401153 <+95>:    lea    0x18(%rsp),%rsi	# rsp + 24
+   0x0000000000401158 <+100>:   mov    %r14,%rax	# rsp
+   0x000000000040115b <+103>:   mov    $0x7,%ecx	# ecx = 7
+   0x0000000000401160 <+108>:   mov    %ecx,%edx	# edx = ecx
+   0x0000000000401162 <+110>:   sub    (%rax),%edx	# edx -= (rax)
+   0x0000000000401164 <+112>:   mov    %edx,(%rax)	# edx = (rax)
+   0x0000000000401166 <+114>:   add    $0x4,%rax	# rax += 4
+   0x000000000040116a <+118>:   cmp    %rsi,%rax	# rax != rsp + 24跳出循环
    0x000000000040116d <+121>:   jne    0x401160 <phase_6+108>
-   0x000000000040116f <+123>:   mov    $0x0,%esi
+```
+
+```C
+for (int i = 0; i <= 6; i++)
+    num[i] = 7 - num[i];
+```
+
+每个数都等于7-本身
+
+```assembly
+   0x000000000040116f <+123>:   mov    $0x0,%esi	# esi = 0
    0x0000000000401174 <+128>:   jmp    0x401197 <phase_6+163>
-   0x0000000000401176 <+130>:   mov    0x8(%rdx),%rdx
-   0x000000000040117a <+134>:   add    $0x1,%eax
+   0x0000000000401176 <+130>:   mov    0x8(%rdx),%rdx	# rdx = (rdx + 8) = rdx + 16
+   # 通过调试发现，rdx每次增加16，进一步观察可以发现rdx是结构节点，+8指向next指针，所以每次增加16
+   0x000000000040117a <+134>:   add    $0x1,%eax	# eax++
    0x000000000040117d <+137>:   cmp    %ecx,%eax
    0x000000000040117f <+139>:   jne    0x401176 <phase_6+130>
    0x0000000000401181 <+141>:   jmp    0x401188 <phase_6+148>
    0x0000000000401183 <+143>:   mov    $0x6032d0,%edx
-   0x0000000000401188 <+148>:   mov    %rdx,0x20(%rsp,%rsi,2)
-   0x000000000040118d <+153>:   add    $0x4,%rsi
-   0x0000000000401191 <+157>:   cmp    $0x18,%rsi
+   0x0000000000401188 <+148>:   mov    %rdx,0x20(%rsp,%rsi,2)	# n[i] = rdx就是node的地址
+   0x000000000040118d <+153>:   add    $0x4,%rsi	# rsi += 4
+   0x0000000000401191 <+157>:   cmp    $0x18,%rsi	# rsi==24跳出循环
    0x0000000000401195 <+161>:   je     0x4011ab <phase_6+183>
-   0x0000000000401197 <+163>:   mov    (%rsp,%rsi,1),%ecx
-   0x000000000040119a <+166>:   cmp    $0x1,%ecx
+   0x0000000000401197 <+163>:   mov    (%rsp,%rsi,1),%ecx	# ecx = num[i]
+   0x000000000040119a <+166>:   cmp    $0x1,%ecx	
    0x000000000040119d <+169>:   jle    0x401183 <phase_6+143>
-   0x000000000040119f <+171>:   mov    $0x1,%eax
-   0x00000000004011a4 <+176>:   mov    $0x6032d0,%edx
+   0x000000000040119f <+171>:   mov    $0x1,%eax	# eax = 1
+   0x00000000004011a4 <+176>:   mov    $0x6032d0,%edx	# edx = node
    0x00000000004011a9 <+181>:   jmp    0x401176 <phase_6+130>
 ```
 
+ ![ 2024-11-23 104418.png](https://s2.loli.net/2024/11/23/2Cog8nEZU7eGJQL.png)
+
+```C
+struct node
+{
+    int val;
+    int index;
+    struct node* next;
+}
+```
+
+```C
+node* n[6];
+node* p = 0x632d0;
+for (int i = 0; i < 6; i++)
+{
+    node* cur = p;
+    for (int j = 0; j < num[i]; j++)
+    {
+        n[i] = cur;
+        cur = p->next;
+    }
+}
+```
+
+按照num[i]给n[i]，这个节点指针数组分别赋值
+
 ```assembly
-   0x00000000004011ab <+183>:   mov    0x20(%rsp),%rbx
-   0x00000000004011b0 <+188>:   lea    0x28(%rsp),%rax
-   0x00000000004011b5 <+193>:   lea    0x50(%rsp),%rsi
-   0x00000000004011ba <+198>:   mov    %rbx,%rcx
-   0x00000000004011bd <+201>:   mov    (%rax),%rdx
-   0x00000000004011c0 <+204>:   mov    %rdx,0x8(%rcx)
-   0x00000000004011c4 <+208>:   add    $0x8,%rax
-   0x00000000004011c8 <+212>:   cmp    %rsi,%rax
+   0x00000000004011ab <+183>:   mov    0x20(%rsp),%rbx	# &&n[0]
+   0x00000000004011b0 <+188>:   lea    0x28(%rsp),%rax	# &&n[1]
+   0x00000000004011b5 <+193>:   lea    0x50(%rsp),%rsi  # &&n[6]
+   0x00000000004011ba <+198>:   mov    %rbx,%rcx	
+   0x00000000004011bd <+201>:   mov    (%rax),%rdx	# n[i+1]
+   0x00000000004011c0 <+204>:   mov    %rdx,0x8(%rcx)	# n[i]->next = n[i+1]
+   0x00000000004011c4 <+208>:   add    $0x8,%rax	# n[i] = n[i]->next
+   0x00000000004011c8 <+212>:   cmp    %rsi,%rax	# rax==rsi跳出循环
    0x00000000004011cb <+215>:   je     0x4011d2 <phase_6+222>
-   0x00000000004011cd <+217>:   mov    %rdx,%rcx
+   0x00000000004011cd <+217>:   mov    %rdx,%rcx	
    0x00000000004011d0 <+220>:   jmp    0x4011bd <phase_6+201>
    0x00000000004011d2 <+222>:   movq   $0x0,0x8(%rdx)
+```
+
+```C
+for (int i = 0; i < 5; i++)
+    n[i]->next = n[i+1];
+n[5]->next = NULL;
+```
+
+将n[i]按数组的顺序连接起来
+
+```assembly
    0x00000000004011da <+230>:   mov    $0x5,%ebp
-   0x00000000004011df <+235>:   mov    0x8(%rbx),%rax
-   0x00000000004011e3 <+239>:   mov    (%rax),%eax
-   0x00000000004011e5 <+241>:   cmp    %eax,(%rbx)
+   0x00000000004011df <+235>:   mov    0x8(%rbx),%rax	# n[i+1]
+   0x00000000004011e3 <+239>:   mov    (%rax),%eax	# n[i+1]->val
+   0x00000000004011e5 <+241>:   cmp    %eax,(%rbx)	# n[i+1]->val>n[i]->val爆炸
    0x00000000004011e7 <+243>:   jge    0x4011ee <phase_6+250>
    0x00000000004011e9 <+245>:   callq  0x40143a <explode_bomb>
-   0x00000000004011ee <+250>:   mov    0x8(%rbx),%rbx
-   0x00000000004011f2 <+254>:   sub    $0x1,%ebp
+   0x00000000004011ee <+250>:   mov    0x8(%rbx),%rbx	# rbp+8
+   0x00000000004011f2 <+254>:   sub    $0x1,%ebp	# ebp--
    0x00000000004011f5 <+257>:   jne    0x4011df <phase_6+235>
    0x00000000004011f7 <+259>:   add    $0x50,%rsp
    0x00000000004011fb <+263>:   pop    %rbx
@@ -404,6 +469,187 @@ if (strings_not_equal(s, cmps))
    0x0000000000401203 <+271>:   retq
 ```
 
+```C
+for (int k = 5; k != 0; k--)
+{
+    i = 0;
+    if (n[i]->val < n[i+1]->val)
+        explode_bomb();
+    i++;
+}
+```
 
+**根据输入的六个数，每个数再通过7-本身得到新的数，通过新的num[i]数组，得到对应的节点指针数组n[i]，再将节点指针数组的next指针更新连接起来，最后进行判断数组是否是呈现递减趋势的**
 
 # Secret Phase
+
+ ![ 2024-11-23 145313.png](https://s2.loli.net/2024/11/23/Xh54palqMtnOvfe.png)
+
+bomb.c中在拆完最后一个炸弹后，作者留下了这样的一段话，我们可以知道一定是错过了什么，在拆前六个炸弹时，我们也能发现一些端倪，就比如在`main()`发现每次拆弹成功后都会调用`phase_defused()`函数，在连续打印地址后续的字符串时会发现彩蛋，在重定向产生的`bomb.s`有一些从未用过的函数`fun7()`，`secret_phase`，下面我们就从`phase_defused()`函数来分析隐藏炸弹
+
+```assembly
+Dump of assembler code for function phase_defused:
+   0x00000000004015c4 <+0>:     sub    $0x78,%rsp
+   0x00000000004015c8 <+4>:     mov    %fs:0x28,%rax
+   0x00000000004015d1 <+13>:    mov    %rax,0x68(%rsp)
+   0x00000000004015d6 <+18>:    xor    %eax,%eax
+   0x00000000004015d8 <+20>:    cmpl   $0x6,0x202181(%rip)        # 0x603760 <num_input_strings>
+   # (0x202181 + $rip)存储的是所拆炸弹数量，必须把六个炸弹都拆了才能继续执行
+   0x00000000004015df <+27>:    jne    0x40163f <phase_defused+123>
+   0x00000000004015e1 <+29>:    lea    0x10(%rsp),%r8	# str
+   0x00000000004015e6 <+34>:    lea    0xc(%rsp),%rcx	# y
+   0x00000000004015eb <+39>:    lea    0x8(%rsp),%rdx	# x
+   0x00000000004015f0 <+44>:    mov    $0x402619,%esi	# "%d %d %s"
+   0x00000000004015f5 <+49>:    mov    $0x603870,%edi	# "7 0 DrEvil"
+   0x00000000004015fa <+54>:    callq  0x400bf0 <__isoc99_sscanf@plt>
+   0x00000000004015ff <+59>:    cmp    $0x3,%eax	# 三个参数才能出发隐藏炸弹
+   0x0000000000401602 <+62>:    jne    0x401635 <phase_defused+113>
+   0x0000000000401604 <+64>:    mov    $0x402622,%esi	# "DrEvil"
+   0x0000000000401609 <+69>:    lea    0x10(%rsp),%rdi	# 需要输入的字符串strs要与上面的相同
+   0x000000000040160e <+74>:    callq  0x401338 <strings_not_equal>
+   0x0000000000401613 <+79>:    test   %eax,%eax
+   0x0000000000401615 <+81>:    jne    0x401635 <phase_defused+113>
+   0x0000000000401617 <+83>:    mov    $0x4024f8,%edi
+   # "Curses, you've found the secret phase!"
+   0x000000000040161c <+88>:    callq  0x400b10 <puts@plt>
+   0x0000000000401621 <+93>:    mov    $0x402520,%edi
+   # "But finding it and solving it are quite different..."
+   0x0000000000401626 <+98>:    callq  0x400b10 <puts@plt>
+   0x000000000040162b <+103>:   mov    $0x0,%eax
+   0x0000000000401630 <+108>:   callq  0x401242 <secret_phase>
+   0x0000000000401635 <+113>:   mov    $0x402558,%edi
+   # "Congratulations! You've defused the bomb!"
+   0x000000000040163a <+118>:   callq  0x400b10 <puts@plt>
+   0x000000000040163f <+123>:   mov    0x68(%rsp),%rax
+   0x0000000000401644 <+128>:   xor    %fs:0x28,%rax
+   0x000000000040164d <+137>:   je     0x401654 <phase_defused+144>
+   0x000000000040164f <+139>:   callq  0x400b30 <__stack_chk_fail@plt>
+   0x0000000000401654 <+144>:   add    $0x78,%rsp
+   0x0000000000401658 <+148>:   retq   
+```
+
+```C
+void phase_defused()
+{
+    if (phase_1,...,phase_6 未全部拆除)
+        return;
+    puts("Congratulations! You've defused the bomb!");
+    if (sscanf("%d %d %s", x, y, str) != 3)
+    	return;
+    if (str = "DrEvil")
+    {
+        puts("Curses, you've found the secret phase!");
+        puts("But finding it and solving it are quite different...");
+        secret_phase();
+        if (隐藏炸弹被拆)
+            puts("Congratulations! You've defused the bomb!");
+    }
+}
+```
+
+```assembly
+Dump of assembler code for function secret_phase:
+   0x0000000000401242 <+0>:     push   %rbx
+   0x0000000000401243 <+1>:     callq  0x40149e <read_line>
+   0x0000000000401248 <+6>:     mov    $0xa,%edx	# 10
+   0x000000000040124d <+11>:    mov    $0x0,%esi	# 0
+   0x0000000000401252 <+16>:    mov    %rax,%rdx
+   0x0000000000401255 <+19>:    callq  0x400bd0 <strtol@plt>	# strtol提取字符串为整数
+   0x000000000040125a <+24>:    mov    %rax,%rbx
+   0x000000000040125d <+27>:    lea    -0x1(%rax),%eax
+   0x0000000000401260 <+30>:    cmp    $0x3e8,%eax	# eax>1000爆炸
+   0x0000000000401265 <+35>:    jbe    0x40126c <secret_phase+42>
+   0x0000000000401267 <+37>:    callq  0x40143a <explode_bomb>
+   0x000000000040126c <+42>:    mov    %ebx,%esi	# 传ebx
+   0x000000000040126e <+44>:    mov    $0x6030f0,%edi	# 传地址
+   0x0000000000401273 <+49>:    callq  0x401204 <fun7>
+   0x0000000000401278 <+54>:    cmp    $0x2,%eax	# fun7返回值不等于2爆炸
+   0x000000000040127b <+57>:    je     0x401282 <secret_phase+64>	
+   0x000000000040127d <+59>:    callq  0x40143a <explode_bomb>
+   0x0000000000401282 <+64>:    mov    $0x402438,%edi
+   # "Wow! You've defused the secret stage!"
+   0x0000000000401287 <+69>:    callq  0x400b10 <puts@plt>
+   0x000000000040128c <+74>:    callq  0x4015c4 <phase_defused>
+   0x0000000000401291 <+79>:    pop    %rbx
+   0x0000000000401292 <+80>:    retq  
+```
+
+```C
+void secret_phase()
+{
+    num = strtol(s);
+    if (num > 1000)
+        explode_bomb();
+    if (fun7(地址, num) != 2)
+        explode_bomb();
+}
+```
+
+```assembly
+Dump of assembler code for function fun7:
+   # rdi传入地址就是根节点，esi传入的num，eax函数的返回值
+   0x0000000000401204 <+0>:     sub    $0x8,%rsp
+   0x0000000000401208 <+4>:     test   %rdi,%rdi			# 空地址跳转
+   0x000000000040120b <+7>:     je     0x401238 <fun7+52>
+   0x000000000040120d <+9>:     mov    (%rdi),%edx			# edx = root->val
+   0x000000000040120f <+11>:    cmp    %esi,%edx			# root->val<=num跳转
+   0x0000000000401211 <+13>:    jle    0x401220 <fun7+28>
+   0x0000000000401213 <+15>:    mov    0x8(%rdi),%rdi		# root = root->left
+   0x0000000000401217 <+19>:    callq  0x401204 <fun7>
+   0x000000000040121c <+24>:    add    %eax,%eax			# ret*=2
+   0x000000000040121e <+26>:    jmp    0x40123d <fun7+57>
+   0x0000000000401220 <+28>:    mov    $0x0,%eax			# eax = 0
+   0x0000000000401225 <+33>:    cmp    %esi,%edx			# num == root->val返回0
+   0x0000000000401227 <+35>:    je     0x40123d <fun7+57>
+   0x0000000000401229 <+37>:    mov    0x10(%rdi),%rdi		# root = root->right
+   0x000000000040122d <+41>:    callq  0x401204 <fun7>
+   0x0000000000401232 <+46>:    lea    0x1(%rax,%rax,1),%eax# ret = ret*2 + 1
+   0x0000000000401236 <+50>:    jmp    0x40123d <fun7+57>
+   0x0000000000401238 <+52>:    mov    $0xffffffff,%eax		# ret = -1
+   0x000000000040123d <+57>:    add    $0x8,%rsp
+   0x0000000000401241 <+61>:    retq   
+```
+
+```C
+struct Node {
+    int value;
+    Node* left;
+    Node* right;
+};
+int fun7(Node* root, int num)
+{
+    if (root == NULL)
+        return -1;
+    if (root->val == num)
+        return 0;
+    if (root->val > num)
+        return 2*fun7(root->left, num);
+    if (root->val < num)
+        return 2*fun7(root->right, num) + 1;
+}
+```
+
+ <img src="https://s2.loli.net/2024/11/23/T4FQ3raftezOX6m.png" style="zoom:67%;" />
+
+                   36
+                 /     \
+               8        50
+             /  \      /   \
+            6   22    45  107 
+          / \   / \  / \   /  \
+         1   7 20 35 40 47 99 1001
+    当fun7(root, 22)时返回2
+
+**从 `phase_defused` 开始：**检查输入条件是否满足。如果满足，进入 `secret_phase`。
+
+**在 `secret_phase` 中**：解析用户输入的目标值，并检查范围。将目标值传递给 `fun7`，在二叉树中查找路径。
+
+**在 `fun7` 中**：按二叉树递归查找目标值。返回路径编码，验证是否与预期值（`2`）匹配。
+
+**返回到 `secret_phase`**：如果路径正确，打印成功信息。返回到 `phase_defused` 结束程序。
+
+**最终答案**
+
+ ![ 2024-11-23 165828.png](https://s2.loli.net/2024/11/23/2DmvQJHN7nMWGpV.png)
+
+ ![ 2024-11-23 170023.png](https://s2.loli.net/2024/11/23/XgR9jy7ZbozkfIs.png)
