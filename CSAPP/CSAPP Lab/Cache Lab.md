@@ -6,6 +6,8 @@
 
 [Lab下载链接](https://csapp.cs.cmu.edu/3e/labs.html)，[CacheLab官方文档](https://csapp.cs.cmu.edu/3e/cachelab.pdf)，[CacheLab官方课件](https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/recitations/rec07.pdf)(强烈推荐阅读)，[大佬笔记](https://zhuanlan.zhihu.com/p/33846811)
 
+[新发现的宝藏网站](https://arthals.ink/blog/cache-lab)
+
 # Part A: Writing a Cache Simulator
 
 下面这些描述是我用豆包对[官方PDF](https://csapp.cs.cmu.edu/3e/cachelab.pdf)生成的总结
