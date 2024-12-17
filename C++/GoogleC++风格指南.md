@@ -7,7 +7,7 @@
 
 这里附一张大佬做的[一张图总结Google C++编程规范(Google C++ Style Guide)](https://blog.csdn.net/voidccc/article/details/37599203)。
 
-![](https://s2.loli.net/2024/12/17/952UaBQOK4DF6AS.png)
+![](https://s2.loli.net/2024/12/17/dS4F6Y7jE59yHzw.png)
 
 # 1. 头文件
 
