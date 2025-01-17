@@ -25,7 +25,7 @@ int actor_mode;				// 并发类型选择
 
 # config.cc
 
-congfig默认构造（C++11可以直接初始化）
+congfig默认构造
 
 ParseArgument调用getopt()解析命令行参数
 
