@@ -1,4 +1,4 @@
-# main.cc
+#  main.cc
 
 初始化server，运行server
 
@@ -68,60 +68,3 @@ private:
     int fd_;
 }
 ```
-
-# buffer.h
-
-![](https://s2.loli.net/2025/01/17/z9rGigU2ZSIho1e.png)
-$$
-prependable = readIndex
-$$
-
-$$
-readable = writeIndex - readIndex
-$$
-
-$$
-writeable = size() - writeIndex
-$$
-
-
-```C++
-class Buffer {
-public:
-    Buffer(int InitBufferSize = 1024);
-    ~Buffer() = default;
-    
-   	size_t WriteableBytes() const;
-    size_t ReadableBytes() const;
-    size_t PrependableBytes() const;
-    
-    const char* Peek() const;
-    void EnsureWriteable(size_t len);
-    void HasWritten(size_t len);
-    
-    void Retrieve(size_t len);
-    void RetrieveUntil(const char* end);
-    
-    char* BeginWrite();
-    const char* BeginWriteConst() const;
-
-    void Append(const std::string& str);
-    void Append(const char* str, size_t len);
-    void Append(const void* data, size_t len);
-    void Append(const Buffer& buff);
-    
-    
-    ssize_t ReadFD(int fd, int* Errno);
-    ssize_t WriteFD(int fd, int* Errno);
-    
-private:
-    char* BeginPtr();
-    const char* BeginPtr() cosnt;
-    void MakeSpace(size_t len);
-    
-    std::vector<char> buffer_;
-    std::atomic<size_t> read_index_;
-    std::atomic<size_t> write_index_;
-}
-```
-
