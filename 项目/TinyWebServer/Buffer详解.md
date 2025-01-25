@@ -1,11 +1,13 @@
-> `Buffer`仿照的是**陈硕老师的muduo库**，用于WebServer的简单`Buffer`，学习和本篇博客参照的主要是[muduo学习笔记：net部分之实现TCP网络编程库-Buffer](https://blog.csdn.net/wanggao_1990/article/details/119426351)和[muduo库buffer源码](https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.h)。
+
+
+在网络编程中，Buffer（缓冲区）是一个非常重要的概念，它可以帮助我们更高效地处理网络数据的读写操作。Buffer仿照的是**陈硕老师的muduo库**，用于WebServer的简单`Buffer`，学习和本篇博客参照的主要是[muduo学习笔记：net部分之实现TCP网络编程库-Buffer](https://blog.csdn.net/wanggao_1990/article/details/119426351)和[muduo库buffer源码](https://github.com/chenshuo/muduo/blob/master/muduo/net/Buffer.h)。
 
 # 为什么需要Buffer缓冲区？
 
 - **output buffer**：在 non-blocking 网络编程中，write () 调用可能无法一次性发送全部数据，网络库需将剩余数据暂存于 TCP 连接的 output buffer，并注册 POLLOUT 事件后续发送。若程序再次写入数据，应追加至 buffer 中，且在有未发送数据时关闭连接需等待数据发送完毕。
 - **input buffer**：TCP 协议的字节流特性使接收方可能收到不完整消息，网络库需将数据读至 input buffer 等待组装成完整消息后再通知业务逻辑，以避免反复触发 POLLIN 事件。
 
-# Buffer设计
+# Buffer 设计
 
 - 对外呈现为连续内存块 `(char*, len)`
 - 内部以 `vector<char>` 存储数据
@@ -19,13 +21,20 @@
 
 Buffer如何不断进行读写循环的，**推荐看[muduo学习笔记：net部分之实现TCP网络编程库-Buffer](https://blog.csdn.net/wanggao_1990/article/details/119426351)**，给出了很多图非常直观，**唯一区别是它有前置8字节`kCheapPrepend`**。
 
-## 成员变量
+# 理解 Buffer 成员变量
 
-**用`vector<char>`存储数据，vector的大小的自动增长，大小指数增长，减小内存分配次数**
+在构建 Buffer 缓冲区时，我们首先要了解它的成员变量。
 
-**`readindex`和`writeindex`采用`atomic`；`atomic`是一种原子类型，可以保证在多线程的情况下，安全高性能得执行程序，更新变量。**
+使用 `std::vector<char>` 来存储数据，这是因为 `vector` 有两个非常重要的特性：
 
-**`readIndex` 和 `writeIndex`采用`size_t`而非`char*`可以避免`vector`迭代器失效**
+1. **自动扩容**：当我们向 `vector` 中添加数据，当空间不足时，`vector` 会自动分配更大的内存空间，这样我们就不需要手动管理内存，减少了出错的可能性。
+2. **大小指数增长**：`vector` 的大小是指数增长的，这意味着随着数据量的增加，内存分配的次数会相对较少，从而提高了性能。
+
+使用 `std::atomic<size_t>` 来定义 `read_index_` 和 `write_index_`。
+
+- **原子性**：`atomic` 是一种原子类型，在多线程环境下，它可以保证变量的操作是原子性的，即不会被其他线程中断，从而保证程序的安全性和高性能。
+
+此外`readIndex` 和 `writeIndex`采用`size_t`而非`char*`可以**避免`vector`迭代器失效**
 
 ```C++
 // vector：1自动扩容 2大小指数增长，减小内存分配次数
@@ -35,7 +44,7 @@ std::atomic<size_t> read_index_;
 std::atomic<size_t> write_index_;
 ```
 
-## ReadFD()
+# 实现 ReadFD() 函数
 
 在栈上准备一个 `65536` 字节的 `stackbuf`，然后利用 `readv()` 来读取数据；`iovec` 有两块，第一块指向 `muduo Buffer` 中的 `writable` 字节，另一块指向栈上的 `stackbuf`。这样如果读入的数据不多，那么全部都读到 Buffer 中去了；如果长度超过 `Buffer` 的 `writable` 字节数，就会读到栈上的 `stackbuf` 里，然后程序再把 `stackbuf` 里的数据 `append` 到 `Buffer` 中。
 
@@ -62,55 +71,60 @@ std::atomic<size_t> write_index_;
 ```C++
 // 将fd的内容读到buffer_中
 ssize_t Buffer::ReadFD(int fd, int* Errno) {
-    char buffer[65535]; // 栈区
+    char buffer[65535];
     int writeable_bytes = WritableBytes();
+
     struct iovec iov[2];
     iov[0].iov_base = WriteBegin();
     iov[0].iov_len = writeable_bytes;
     iov[1].iov_base = &buffer;
     iov[1].iov_len = sizeof(buffer);
 
-    ssize_t len = readv(fd, iov, 2);
+    // 使用readv从fd读取数据到iov数组指定的两个缓冲区
+    ssize_t len = readv(fd, iov, 2); 
     if (len < 0) {
         *Errno = errno;
     } else if (static_cast<size_t>(len) <= writeable_bytes) {
         write_index_ += len;
     } else {
         write_index_ = buffer_.size();
-        Append(buffer, static_cast<size_t>(len) - writeable_bytes);
+        // 将栈上缓冲区剩余的数据追加到buffer_中
+        Append(buffer, static_cast<size_t>(len) - writeable_bytes); 
     }
     return len;
 }
 ```
 
-## WriteFD()
+# 实现 WriteFD() 函数
 
 直接用`write()`函数来读取`fd`对应内容，并调用`Retrieve()`修改`read_index`。
 
 ```C++
 // 将buffer_的内容写到fd中
 ssize_t Buffer::WriteFD(int fd, int* Errno) {
-    ssize_t len = write(fd, ReadBegin(), ReadableBytes());
+    // 使用write函数将buffer_中的可读数据写入fd
+    ssize_t len = write(fd, ReadBegin(), ReadableBytes()); 
     if (len < 0)
-        *Errno = errno;
+        *Errno = errno; // 写入失败，记录错误码
     else
-        Retrieve(len);
+        Retrieve(len); // 写入成功，移动读索引
     return len;
 }
 ```
 
-## MakeSpace()
+# 实现 MakeSpace() 函数
 
 `MakeSpace` 函数的功能是确保 `Buffer` 对象有足够的空间来存储新的数据。如果`len`比`writable` 字节数和`prepend`字节数的和小，利用库函数`copy`将数据向前移，保证有`len`长度的空间用来写；如果`len`比`writable` 字节数和`prepend`字节数的和大，直接调用`vector`的resize()扩容。
 
 ```C++
-// 扩展空间
+// 扩展空间，确保Buffer对象有足够的空间来存储新的数据
 void Buffer::MakeSpace(size_t len) {
     if (len > WritableBytes() + PrependableBytes()) {
-        buffer_.resize(write_index_ + len);
+        buffer_.resize(write_index_ + len); // 直接扩容buffer_
     } else {
         size_t readable_bytes = ReadableBytes();
-        std::copy(Begin() + read_index_, Begin() + write_index_, Begin());
+        // 将可读数据向前移动到buffer_的起始位置
+        std::copy(Begin() + read_index_, Begin() + write_index_, Begin()); 
         read_index_ = 0;
         write_index_ = readable_bytes;
         assert(readable_bytes == ReadableBytes());
@@ -118,9 +132,23 @@ void Buffer::MakeSpace(size_t len) {
 }
 ```
 
-# Buffer类
+# Buffer 代码
+
+**Buffer 类**
 
 ```C++
+#ifndef BUFFER_H
+#define BUFFER_H
+
+#include <unistd.h>  // write
+#include <sys/uio.h> // readv
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <atomic>
+#include <cassert>
+
 class Buffer {
 public:
     Buffer(int init_buffer_size = 1024);
@@ -163,11 +191,15 @@ private:
     std::atomic<size_t> read_index_;
     std::atomic<size_t> write_index_;
 };
+
+#endif // BUFFER_H
 ```
 
 **函数实现**
 
 ```C++
+#include "buffer.h"
+
 // vector<char>初始化，读写下标初始化
 Buffer::Buffer(int init_buffer_size)
     : buffer_(init_buffer_size), read_index_(0), write_index_(0) {};
@@ -316,7 +348,7 @@ void Buffer::MakeSpace(size_t len) {
 }
 ```
 
-# 测试Buffer
+# Buffer 测试
 
 利用***Google Test***对`Bufer`类进行单元测试，测试对`Buffer`追加和取回数据，自动增长，内部增长。
 
@@ -424,4 +456,3 @@ add_executable(buffer_unit_test buffer_unit_test.cc ../code/buffer/buffer.cc)
 # 链接 Google Test 库
 target_link_libraries(buffer_unit_test ${GTEST_LIBRARIES} pthread)
 ```
-
