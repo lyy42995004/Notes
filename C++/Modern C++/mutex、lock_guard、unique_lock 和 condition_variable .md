@@ -98,7 +98,8 @@ std::mutex mtx;
 int sharedData = 0;
 
 void complexTask() {
-    std::unique_lock<std::mutex> lock(mtx);
+    // 创建 std::unique_lock 对象，但不立即锁定互斥锁
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
     // ...
 
     // 根据条件决定是否锁定
