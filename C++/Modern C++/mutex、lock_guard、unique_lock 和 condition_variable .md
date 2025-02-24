@@ -107,7 +107,7 @@ void complexTask() {
         lock.lock();
         // 临界区
         sharedData++;
-        std::cout << "Shared resource value: " << shareData << std::endl;
+        std::cout << "Shared resource value: " << sharedData << std::endl;
         // 提前解锁
         lock.unlock();
     }

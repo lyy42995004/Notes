@@ -192,3 +192,35 @@ private:
 
 `std::weak_ptr` 是 C++ 标准库中的一种智能指针，它是为了配合 `std::shared_ptr` 而引入的，用于解决 `std::shared_ptr` 可能存在的循环引用。当多个 `std::shared_ptr` 相互引用形成循环时，它们的引用计数永远不会降为 0，导致对象无法被释放，而 `std::weak_ptr` 不影响引用计数，可作为一种弱引用解决此问题。
 
+```C++
+#include <iostream>
+#include <memory>
+
+class B; // 前向声明
+
+class A {
+public:
+    std::shared_ptr<B> b_ptr;
+    ~A() { std::cout << "A destroyed\n"; }
+};
+
+class B {
+public:
+    std::weak_ptr<A> a_ptr; // 使用 weak_ptr 避免循环引用
+    ~B() { std::cout << "B destroyed\n"; }
+};
+
+int main() {
+    auto a = std::make_shared<A>();
+    auto b = std::make_shared<B>();
+    a->b_ptr = b;
+    b->a_ptr = a;
+
+    // 此时 a 和 b 的引用计数都为 1，不会造成循环引用
+    std::cout << "a use_count: " << a.use_count() << "\n"; // 输出 1
+    std::cout << "b use_count: " << b.use_count() << "\n"; // 输出 1
+
+    return 0;
+}
+```
+
