@@ -16,7 +16,7 @@
 4. **判断日志写入方式**：
    在 `Write()` 函数内部，会根据 `is_async` 变量的值来决定具体的日志写入方式。如果 `is_async` 为 `true`，表示当前处于异步日志模式，工作线程会将需要写入的日志内容放入阻塞队列中，然后由专门的写线程从阻塞队列中取出数据并写入日志文件；如果 `is_async` 为 `false`，则表示处于同步日志模式，日志内容会直接写入到日志文件中。
 
-# 理解 Buffer 成员变量
+# Log 成员变量
 
 ```C++
 static const int Log_NAME_LENGTH = 256; // 最长文件名
@@ -214,7 +214,7 @@ void Log::Write(int level, const char* format, ...) {
 
 # Log 代码
 
-**Log 类 + 宏函数**
+**log.h**
 
 ```C++
 #ifndef Log_H
@@ -300,7 +300,7 @@ private:
 #endif // Log_H
 ```
 
-**成员函数**
+**log.cc**
 
 ```C++
 #include "log.h"
@@ -536,25 +536,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
-# 查找 Google Test 包
-find_package(GTest REQUIRED)
-
-# 包含 Google Test 头文件目录
-include_directories(${GTEST_INCLUDE_DIRS})
 
 # 添加可执行文件
-add_executable(buffer_unit_test buffer_unit_test.cc ../code/buffer/buffer.cc)
-add_executable(blockqueue_unit_test blockqueue_unit_test.cc)
 add_executable(log_unit_test log_unit_test.cc ../code/log/log.cc ../code/buffer/buffer.cc)
-
-# 链接 Google Test 库
-target_link_libraries(buffer_unit_test ${GTEST_LIBRARIES} pthread)
-target_link_libraries(blockqueue_unit_test ${GTEST_LIBRARIES} pthread)
-
-# 启用测试
-enable_testing()
-
-# 添加测试
-add_test(NAME buffer_unit_test COMMAND buffer_unit_test)
-add_test(NAME blockqueue_unit_test COMMAND blockqueue_unit_test)
 ```

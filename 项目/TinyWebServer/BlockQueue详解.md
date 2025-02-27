@@ -18,7 +18,7 @@
 - **提升并发性能**：支持多线程协作，生产者和消费者线程可以同时工作，充分利用多核处理器的性能优势，同时队列的同步机制避免了线程竞争，提高了系统的并发处理能力。
 - **保证日志顺序**：阻塞队列的先进先出特性确保日志按产生顺序进行存储，便于后续的问题排查和分析。
 
-# 理解成员变量
+# BlockQueue 成员变量
 
 ```C++
 bool is_close;          // 是否关闭
@@ -144,7 +144,7 @@ void BlockQueue<T>::close() {
 
 模板的定义和实现要放在同一个头文件中，因为模板的代码需要在编译时实例化。
 
-**BlockQueue类 + 函数实现**
+**block**
 
 ```C++
 #ifndef BLOCKQUEUE_H
@@ -425,7 +425,7 @@ int main(int argc, char* argv[]) {
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
-project(buffer_unit_test)
+project(tests)
 
 # 设置 C++ 标准和编译器选项
 set(CMAKE_CXX_STANDARD 14)
@@ -434,22 +434,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # 查找 Google Test 包
 find_package(GTest REQUIRED)
-
 # 包含 Google Test 头文件目录
 include_directories(${GTEST_INCLUDE_DIRS})
-
 # 添加可执行文件
-add_executable(buffer_unit_test buffer_unit_test.cc ../code/buffer/buffer.cc)
 add_executable(blockqueue_unit_test blockqueue_unit_test.cc)
-
 # 链接 Google Test 库
-target_link_libraries(buffer_unit_test ${GTEST_LIBRARIES} pthread)
 target_link_libraries(blockqueue_unit_test ${GTEST_LIBRARIES} pthread)
-
 # 启用测试
 enable_testing()
-
 # 添加测试
-add_test(NAME buffer_unit_test COMMAND buffer_unit_test)
 add_test(NAME blockqueue_unit_test COMMAND blockqueue_unit_test)
 ```

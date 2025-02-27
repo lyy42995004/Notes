@@ -21,7 +21,7 @@
 
 Buffer如何不断进行读写循环的，**推荐看[muduo学习笔记：net部分之实现TCP网络编程库-Buffer](https://blog.csdn.net/wanggao_1990/article/details/119426351)**，给出了很多图非常直观，**唯一区别是它有前置8字节`kCheapPrepend`**。
 
-# 理解 Buffer 成员变量
+# Buffer 成员变量
 
 在构建 Buffer 缓冲区时，我们首先要了解它的成员变量。
 
@@ -134,7 +134,7 @@ void Buffer::MakeSpace(size_t len) {
 
 # Buffer 代码
 
-**Buffer 类**
+**buffer.h**
 
 ```C++
 #ifndef BUFFER_H
@@ -195,7 +195,7 @@ private:
 #endif // BUFFER_H
 ```
 
-**函数实现**
+**buffer.cc**
 
 ```C++
 #include "buffer.h"
@@ -445,7 +445,12 @@ int main(int argc, char* argv[]) {
 
 ```cmake
 cmake_minimum_required(VERSION 3.10)
-project(buffer_unit_test)
+project(tests)
+
+# 设置 C++ 标准和编译器选项
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # 查找 Google Test 包
 find_package(GTest REQUIRED)
