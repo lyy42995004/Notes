@@ -242,7 +242,7 @@ int SqlConnectPool::GetFreeConnectCount() {
 
 # SqlConnectPool 测试
 
-测试SqlConnectPool中MYSQL的初始化，连接，以及查询语句，以及SqlConnRAII 类
+**测试SqlConnectPool中MYSQL的初始化，连接，以及查询语句，以及SqlConnRAII 类**
 
 ```C++
 #include "../code/pool/sql_connect_pool.h"

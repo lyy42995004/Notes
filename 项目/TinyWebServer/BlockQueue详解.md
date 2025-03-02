@@ -319,7 +319,7 @@ size_t BlockQueue<T>::capacity() {
 
 # BlockQueue 测试
 
-利用***Google Test***对`BlockQueue`类进行单元测试，测试对`Buffer`的基本功能，延时出队，多线程下的生产者-消费者模型，关闭操作。
+利用***Google Test***对`BlockQueue`类进行单元测试，**测试对`Buffer`的基本功能，延时出队，多线程下的生产者-消费者模型，关闭操作。**
 
 ```C++
 #include "../code/log/blockqueue.h"

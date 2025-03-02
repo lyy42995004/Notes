@@ -350,7 +350,7 @@ void Buffer::MakeSpace(size_t len) {
 
 # Buffer 测试
 
-利用***Google Test***对`Bufer`类进行单元测试，测试对`Buffer`追加和取回数据，自动增长，内部增长。
+利用***Google Test***对`Bufer`类进行单元测试，**测试对`Buffer`追加和取回数据，自动增长，内部增长。**
 
 ```C++
 #include "../code/buffer/buffer.h"

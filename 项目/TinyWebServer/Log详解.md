@@ -480,6 +480,8 @@ bool Log::IsOpen() {
 
 # Log 测试
 
+**测试 log 功能**
+
 ```
 #include "../code/log/log.h"
 #include <iostream>
