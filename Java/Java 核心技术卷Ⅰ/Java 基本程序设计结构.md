@@ -70,6 +70,8 @@ double salary;
 - 从 Java 10 开始，局部变量声明可使用`var`关键字，由系统根据初始值推断类型。
 
 > **C++注释**：C 和 C++ 区分变量声明与定义，`int i  =  10;`是一个定义，而`extern int i`是一个声明；Java 不区分。
+>
+> Java `var` 仅用于局部变量；C++ `auto` 用途更广，可用于局部变量、函数返回类型、模板编程等。
 
 ```java
 // double salary;
@@ -400,4 +402,3 @@ int[][] magicSquare = {
 > for (i = 0; i < 10; i++) 
 > 	balances[i] = new double[6];
 > ```
->
