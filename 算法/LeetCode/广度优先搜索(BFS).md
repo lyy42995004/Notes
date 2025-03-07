@@ -127,3 +127,177 @@ vector<vector<int>> levelOrder(Node* root) {
 }
 ```
 
+## [515. 在每个树行中找最大值](https://leetcode.cn/problems/find-largest-value-in-each-tree-row/)
+
+> 给定一棵二叉树的根节点 `root` ，请找出该二叉树中每一层的最大值。
+>
+>  
+>
+> **示例1：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/08/21/largest_e1.jpg" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入: root = [1,3,2,5,3,null,9]
+> 输出: [1,3,9]
+> ```
+>
+> **示例2：**
+>
+> ```
+> 输入: root = [1,2,3]
+> 输出: [1,3]
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - 二叉树的节点个数的范围是 `[0,10^4]`
+> - `-2^31 <= Node.val <= 2^31 - 1`
+
+**BFS**
+
+```cpp
+vector<int> largestValues(TreeNode* root) {
+    if (root == nullptr)
+        return {};
+    vector<int> ans;
+    queue<TreeNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        int n = q.size();
+        int x = INT_MIN;
+        while (n--) {
+            TreeNode* node = q.front();
+            x = max(x, node->val);
+            q.pop();
+            if (node->left)
+                q.push(node->left);
+            if (node->right)
+                q.push(node->right);
+        }
+        ans.push_back(x);
+    }
+    return ans;
+}
+```
+
+## [662. 二叉树最大宽度](https://leetcode.cn/problems/maximum-width-of-binary-tree/)
+
+> 给你一棵二叉树的根节点 `root` ，返回树的 **最大宽度** 。
+>
+> 树的 **最大宽度** 是所有层中最大的 **宽度** 。
+>
+> 每一层的 **宽度** 被定义为该层最左和最右的非空节点（即，两个端点）之间的长度。将这个二叉树视作与满二叉树结构相同，两端点间会出现一些延伸到这一层的 `null` 节点，这些 `null` 节点也计入长度。
+>
+> 题目数据保证答案将会在 **32 位** 带符号整数范围内。
+>
+>  
+>
+> **示例 1：**
+>
+> <img src="https://assets.leetcode.com/uploads/2021/05/03/width1-tree.jpg" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入：root = [1,3,2,5,3,null,9]
+> 输出：4
+> 解释：最大宽度出现在树的第 3 层，宽度为 4 (5,3,null,9) 。
+> ```
+>
+> **示例 2：**
+>
+> <img src="https://assets.leetcode.com/uploads/2022/03/14/maximum-width-of-binary-tree-v3.jpg" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入：root = [1,3,2,5,null,null,9,6,null,7]
+> 输出：7
+> 解释：最大宽度出现在树的第 4 层，宽度为 7 (6,null,null,null,null,null,7) 。
+> ```
+>
+> **示例 3：**
+>
+> <img src="https://assets.leetcode.com/uploads/2021/05/03/width3-tree.jpg" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入：root = [1,3,2,5]
+> 输出：2
+> 解释：最大宽度出现在树的第 2 层，宽度为 2 (3,2) 。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - 树中节点的数目范围是 `[1, 3000]`
+> - `-100 <= Node.val <= 100`
+
+**队列 + BFS**
+
+通过 pair 类型将节点对应索引也入队，每次一层一层出队，并记录最左节点，和最右节点的索引，用来计算本层的最大宽度。
+
+使用 `unsigned int` 类型来存储节点索引避免编号溢出的问题，当溢出时两者相减也是正确的宽度。
+
+```cpp
+int widthOfBinaryTree(TreeNode* root) {
+    unsigned int ans = 0;
+    queue<pair<TreeNode*, unsigned int>> q;
+    q.push({root, 0});
+    while (!q.empty()) {
+        int n = q.size();
+        auto p = q.front();
+        unsigned int left = p.second;
+        while (n--) {
+            p = q.front();
+            TreeNode* node = p.first;
+            unsigned int x = p.second;
+            q.pop();
+            if (node->left)
+                q.push({node->left, x * 2});
+            if (node->right)
+                q.push({node->right, x * 2 + 1});
+        }
+        unsigned int right = p.second;
+        ans = max(ans, right - left + 1);
+    }
+    return ans;
+}
+```
+
+**数组 +  BFS**
+
+```cpp
+int widthOfBinaryTree(TreeNode* root) {
+    unsigned int ans = 0;
+    // 数组模拟队列
+    vector<pair<TreeNode*, unsigned int>> q;
+    q.emplace_back(root, 0);
+    while (!q.empty()) {
+        // 更新最大宽度
+        auto& [lnode, l] = q.front();
+        auto& [rnode, r] = q.back();
+        ans = max(ans, r - l + 1);
+
+        // 下一层进队
+        vector<pair<TreeNode*, unsigned int>> tmp;
+        for (auto& [node, x] : q) {
+            if (node->left)
+                tmp.emplace_back(node->left, 2 * x);
+            if (node->right)
+                tmp.emplace_back(node->right, 2 * x + 1);
+        }
+        q = tmp;
+    }
+    return ans;
+}
+```
+
+> 结构化绑定是 C++17 引入的特性，能把结构体、数组、`std::pair`等对象 “拆分” 成多个独立变量。
+>
+> ```cpp
+> auto [变量1, 变量2, ...] = 对象
+> ```
+>
+> - `auto` 自动推导变量类型。
+> - `[变量1, 变量2, ...]` 是自定义的变量名。
+> - `对象` 是要拆分的目标。
