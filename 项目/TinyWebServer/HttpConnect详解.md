@@ -17,7 +17,7 @@ public:
 
     ssize_t Read(int* save_errno);
     ssize_t Write(int* save_errno);
-    bool process();
+    bool Process();
 
     // 写的总长度
     int ToWriteBytes() const { return iov_[0].iov_len + iov_[1].iov_len; }
@@ -143,7 +143,7 @@ ssize_t HttpConnect::Write(int* save_errno) {
 - 设置 `iov_` 数组的信息，根据是否有文件内容决定 `iov_cnt_` 的值。
 
 ```C++
-bool HttpConnect::process() {
+bool HttpConnect::Process() {
     request_.Init();
     if (read_buff_.ReadableBytes() <= 0)
         return false;
@@ -202,7 +202,7 @@ public:
 
     ssize_t Read(int* save_errno);
     ssize_t Write(int* save_errno);
-    bool process();
+    bool Process();
 
     // 写的总长度
     int ToWriteBytes() const { return iov_[0].iov_len + iov_[1].iov_len; }
@@ -389,7 +389,7 @@ void TestHttpConnect() {
     // 测试Process函数
     {
         HttpConnect::src_dir = "/home/Tian/tiny_web_server/resources";
-        bool result = conn.process();
+        bool result = conn.Process();
         assert(result);
     }
 
