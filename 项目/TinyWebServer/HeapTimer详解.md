@@ -93,7 +93,7 @@ void HeapTimer::SiftUp(size_t child) {
 // 返回：是否调整
 bool HeapTimer::SiftDown(size_t parent, size_t n) {
     assert(parent < heap_.size());
-    assert(n < heap_.size());
+    assert(n <= heap_.size());
     size_t child = 2 * parent + 1; // 左孩子
     size_t pos = parent;
     while (child < n) {
@@ -373,7 +373,7 @@ void HeapTimer::SiftUp(size_t child) {
 // 返回：是否调整
 bool HeapTimer::SiftDown(size_t parent, size_t n) {
     assert(parent < heap_.size());
-    assert(n < heap_.size());
+    assert(n <= heap_.size());
     size_t child = 2 * parent + 1; // 左孩子
     size_t pos = parent;
     while (child < n) {

@@ -156,7 +156,7 @@ bool HttpConnect::Process() {
 
     response_.MakeResponse(write_buff_);
     iov_[0].iov_base = const_cast<char*>(write_buff_.ReadBegin());
-    iov_[0].iov_len = response_.FileLen();
+    iov_[0].iov_len = write_buff_.ReadableBytes();
     iov_cnt_ = 1;
 
     // 报文主体文件
@@ -325,7 +325,7 @@ bool HttpConnect::process() {
 
     response_.MakeResponse(write_buff_);
     iov_[0].iov_base = const_cast<char*>(write_buff_.ReadBegin());
-    iov_[0].iov_len = response_.FileLen();
+    iov_[0].iov_len = write_buff_.ReadableBytes();
     iov_cnt_ = 1;
 
     // 报文主体文件
@@ -400,7 +400,7 @@ void TestHttpConnect() {
         assert(len >= -1);
 
         char buffer[10240];
-        ssize_t recv_len = recv(client_sock, buffer, sizeof(buffer), -1);
+        ssize_t recv_len = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         assert(recv_len == len);
     }
     close(client_sock);
