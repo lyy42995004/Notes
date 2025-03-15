@@ -49,6 +49,25 @@ Web Server 本质上是一个服务器软件或运行该软件的硬件。它的
 
 # 主要功能模块
 
+```
+        WebServer                     :服务器逻辑框架：　epoller监听＋线程池读写
+            |
+            |
+    Epoller    Timer                  :epoll操作封装，　定时器给连接计时
+        |        |
+        ----------
+            |
+      HttpConnection                  ：把监听连接返回的文件描述符封装成一个连接实例, 对readv, write网络数据传输进行封装，　管理连接
+      |            |
+HttpRequest  HttpResponse             ：请求操作封装，响应操作封装，业务逻辑
+      |            |
+      --------------
+            |
+          Buffer                      ：读写缓冲区
+```
+
+ThreadPool : 线程池，负责读写操作（上图上两层属于主线程，下三层属于线程池） Log : 日志类
+
 ## Buffer
 
 - `Buffer`以 `std::vector<char>` 为存储实体，通过 `std::atomic<std::size_t>` 类型的 `read_index_` 和 `write_index_` 分别标记读写位置，利用 `readv` 结合栈上空间实现分散读，提供读写接口、容量管理和数据操作方法，确保数据的高效读写与存储。
