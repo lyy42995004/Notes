@@ -99,6 +99,97 @@ vector<vector<int>> floodFill(vector<vector<int>>& image, int sr, int sc, int co
 
 # 中等
 
+## [130. 被围绕的区域](https://leetcode.cn/problems/surrounded-regions/)
+
+> 给你一个 `m x n` 的矩阵 `board` ，由若干字符 `'X'` 和 `'O'` 组成，**捕获** 所有 **被围绕的区域**：
+>
+> - **连接：**一个单元格与水平或垂直方向上相邻的单元格连接。
+> - **区域：连接所有** `'O'` 的单元格来形成一个区域。
+> - **围绕：**如果您可以用 `'X'` 单元格 **连接这个区域**，并且区域中没有任何单元格位于 `board` 边缘，则该区域被 `'X'` 单元格围绕。
+>
+> 通过 **原地** 将输入矩阵中的所有 `'O'` 替换为 `'X'` 来 **捕获被围绕的区域**。你不需要返回任何值。
+>
+>  
+>
+> **示例 1：**
+>
+> **输入：**board = [["X","X","X","X"],["X","O","O","X"],["X","X","O","X"],["X","O","X","X"]]
+>
+> **输出：**[["X","X","X","X"],["X","X","X","X"],["X","X","X","X"],["X","O","X","X"]]
+>
+> **解释：**
+>
+> ![img](https://pic.leetcode.cn/1718167191-XNjUTG-image.png)
+>
+> 在上图中，底部的区域没有被捕获，因为它在 board 的边缘并且不能被围绕。
+>
+> **示例 2：**
+>
+> **输入：**board = [["X"]]
+>
+> **输出：**[["X"]]
+>
+>  
+>
+> **提示：**
+>
+> - `m == board.length`
+> - `n == board[i].length`
+> - `1 <= m, n <= 200`
+> - `board[i][j]` 为 `'X'` 或 `'O'`
+
+从矩形四周遍历，如果是字符`'O'`，则将它标记为`'F'`，后续进行BFS遍历所有未被包围的字符`'O'`，最后再将被标记的字符`'F'`还原为字符`'O'`，未被标记的字符`'O'`改为字符`'X'`。
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+void solve(vector<vector<char>>& board) {
+    int m = board.size(), n = board[0].size();
+    queue<pair<int, int>> que;
+    for (int i = 0; i < m; ++i) {
+        if (board[i][0] == 'O') {
+            que.emplace(i, 0);
+            board[i][0] = 'F';
+        }
+        if (board[i][n - 1] == 'O') {
+            que.emplace(i, n - 1);
+            board[i][n - 1] = 'F';
+        }
+    }
+    for (int i = 1; i < n - 1; ++i) {
+        if (board[0][i] == 'O') {
+            que.emplace(0, i);
+            board[0][i] = 'F';
+        }
+        if (board[m - 1][i] == 'O') {
+            que.emplace(m - 1, i);
+            board[m - 1][i] = 'F';
+        }
+    }
+    while (!que.empty()) {
+        auto [x, y] = que.front();
+        que.pop();
+        for (int k = 0; k < 4; ++k) {
+            int nx = x + dx[k], ny = y + dy[k];
+            if (nx >= 0 && nx < m && ny >= 0 && ny < n && board[nx][ny] == 'O') {
+                que.emplace(nx, ny);
+                board[nx][ny] = 'F';
+            }
+        }
+    }
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (board[i][j] == 'F') {
+                board[i][j] = 'O';
+            } else if (board[i][j] == 'O') {
+                board[i][j] = 'X';
+            }
+        }
+    }
+}
+```
+
 ## [200. 岛屿数量](https://leetcode.cn/problems/number-of-islands/)
 
 > 给你一个由 `'1'`（陆地）和 `'0'`（水）组成的的二维网格，请你计算网格中岛屿的数量。
@@ -171,6 +262,80 @@ int numIslands(vector<vector<char>>& grid) {
                         }
                     }
                 }
+            }
+        }
+    }
+    return ans;
+}
+```
+
+## [695. 岛屿的最大面积](https://leetcode.cn/problems/max-area-of-island/)
+
+> 给你一个大小为 `m x n` 的二进制矩阵 `grid` 。
+>
+> **岛屿** 是由一些相邻的 `1` (代表土地) 构成的组合，这里的「相邻」要求两个 `1` 必须在 **水平或者竖直的四个方向上** 相邻。你可以假设 `grid` 的四个边缘都被 `0`（代表水）包围着。
+>
+> 岛屿的面积是岛上值为 `1` 的单元格的数目。
+>
+> 计算并返回 `grid` 中最大的岛屿面积。如果没有岛屿，则返回面积为 `0` 。
+>
+>  
+>
+> **示例 1：**
+>
+> ![img](https://assets.leetcode.com/uploads/2021/05/01/maxarea1-grid.jpg)
+>
+> ```
+> 输入：grid = [[0,0,1,0,0,0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,1,1,0,1,0,0,0,0,0,0,0,0],[0,1,0,0,1,1,0,0,1,0,1,0,0],[0,1,0,0,1,1,0,0,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0,1,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0],[0,0,0,0,0,0,0,1,1,0,0,0,0]]
+> 输出：6
+> 解释：答案不应该是 11 ，因为岛屿只能包含水平或垂直这四个方向上的 1 。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：grid = [[0,0,0,0,0,0,0,0]]
+> 输出：0
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `m == grid.length`
+> - `n == grid[i].length`
+> - `1 <= m, n <= 50`
+> - `grid[i][j]` 为 `0` 或 `1`
+
+与这题类似[200. 岛屿数量](https://leetcode.cn/problems/number-of-islands/)，只不过每次统计一下岛屿的大小并保留最大值。
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+int maxAreaOfIsland(vector<vector<int>>& grid) {
+    int m = grid.size(), n = grid[0].size();
+    queue<pair<int, int>> que;
+    int ans = 0;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (grid[i][j] == 1) {
+                que.emplace(i, j);
+                grid[i][j] = 0;
+                int cnt = 0;
+                while (!que.empty()) {
+                    cnt++;
+                    auto [x, y] = que.front();
+                    que.pop();
+                    for (int k = 0; k < 4; ++k) {
+                        int nx = x + dx[k], ny = y + dy[k];
+                        if (nx >= 0 && nx < m && ny >= 0 && ny < n && grid[nx][ny] == 1) {
+                            que.emplace(nx, ny);
+                            grid[nx][ny] = 0;
+                        }
+                    }
+                }
+                ans = max(ans, cnt);
             }
         }
     }
