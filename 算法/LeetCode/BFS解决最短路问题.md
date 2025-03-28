@@ -216,3 +216,207 @@ int nearestExit(vector<vector<char>>& maze, vector<int>& entrance) {
 # 困难
 
 ## [127. 单词接龙](https://leetcode.cn/problems/word-ladder/)
+
+> 字典 `wordList` 中从单词 `beginWord` 到 `endWord` 的 **转换序列** 是一个按下述规格形成的序列 `beginWord -> s1 -> s2 -> ... -> sk`：
+>
+> - 每一对相邻的单词只差一个字母。
+> -  对于 `1 <= i <= k` 时，每个 `si` 都在 `wordList` 中。注意， `beginWord` 不需要在 `wordList` 中。
+> - `sk == endWord`
+>
+> 给你两个单词 `beginWord` 和 `endWord` 和一个字典 `wordList` ，返回 *从 `beginWord` 到 `endWord` 的 **最短转换序列** 中的 **单词数目*** 。如果不存在这样的转换序列，返回 `0` 。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
+> 输出：5
+> 解释：一个最短转换序列是 "hit" -> "hot" -> "dot" -> "dog" -> "cog", 返回它的长度 5。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log"]
+> 输出：0
+> 解释：endWord "cog" 不在字典中，所以无法进行转换。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= beginWord.length <= 10`
+> - `endWord.length == beginWord.length`
+> - `1 <= wordList.length <= 5000`
+> - `wordList[i].length == beginWord.length`
+> - `beginWord`、`endWord` 和 `wordList[i]` 由小写英文字母组成
+> - `beginWord != endWord`
+> - `wordList` 中的所有字符串 **互不相同**
+
+和这题类似[433. 最小基因变化](https://leetcode.cn/problems/minimum-genetic-mutation/)
+
+```cpp
+int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+    if (beginWord == endWord) {
+        return 0;
+    }
+    unordered_set<string> vis;
+    unordered_set<string> hash(wordList.begin(), wordList.end());
+    if (!hash.count(endWord)) {
+        return 0;
+    }
+    int step = 1;
+    int n = beginWord.size();
+    queue<string> que;
+    que.push(beginWord);
+    vis.insert(beginWord);
+    while (!que.empty()) {
+        step++;
+        int cnt = que.size();
+        while (cnt--) {
+            string str = que.front();
+            que.pop();
+            for (int i = 0; i < n; ++i) {
+                string tmp = str;
+                for (char ch = 'a'; ch <= 'z'; ++ch) {
+                    tmp[i] = ch;
+                    if  (hash.count(tmp) && !vis.count(tmp)) {
+                        if (tmp == endWord) {
+                            return step;
+                        }
+                        vis.insert(tmp);
+                        que.push(tmp);
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+```
+
+## [675. 为高尔夫比赛砍树](https://leetcode.cn/problems/cut-off-trees-for-golf-event/)
+
+> 你被请来给一个要举办高尔夫比赛的树林砍树。树林由一个 `m x n` 的矩阵表示， 在这个矩阵中：
+>
+> - `0` 表示障碍，无法触碰
+> - `1` 表示地面，可以行走
+> - `比 1 大的数` 表示有树的单元格，可以行走，数值表示树的高度
+>
+> 每一步，你都可以向上、下、左、右四个方向之一移动一个单位，如果你站的地方有一棵树，那么你可以决定是否要砍倒它。
+>
+> 你需要按照树的高度从低向高砍掉所有的树，每砍过一颗树，该单元格的值变为 `1`（即变为地面）。
+>
+> 你将从 `(0, 0)` 点开始工作，返回你砍完所有树需要走的最小步数。 如果你无法砍完所有的树，返回 `-1` 。
+>
+> 可以保证的是，没有两棵树的高度是相同的，并且你至少需要砍倒一棵树。
+>
+>  
+>
+> **示例 1：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/11/26/trees1.jpg" alt="img" style="zoom:67%;" />
+>
+> ```
+> 输入：forest = [[1,2,3],[0,0,4],[7,6,5]]
+> 输出：6
+> 解释：沿着上面的路径，你可以用 6 步，按从最矮到最高的顺序砍掉这些树。
+> ```
+>
+> **示例 2：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/11/26/trees2.jpg" alt="img" style="zoom:67%;" />
+>
+> ```
+> 输入：forest = [[1,2,3],[0,0,0],[7,6,5]]
+> 输出：-1
+> 解释：由于中间一行被障碍阻塞，无法访问最下面一行中的树。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：forest = [[2,3,4],[0,0,5],[8,7,6]]
+> 输出：6
+> 解释：可以按与示例 1 相同的路径来砍掉所有的树。
+> (0,0) 位置的树，可以直接砍去，不用算步数。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `m == forest.length`
+> - `n == forest[i].length`
+> - `1 <= m, n <= 50`
+> - `0 <= forest[i][j] <= 109`
+
+每次要砍一棵树都是一次BFS求最短路。
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+int cutOffTree(vector<vector<int>>& forest) {
+    vector<pair<int, int>> trees;
+    int m = forest.size(), n = forest[0].size();
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (forest[i][j] > 1) {
+                trees.emplace_back(i, j);
+            }
+        }
+    }
+    auto cmp = [&](const pair<int, int>& a, const pair<int, int>& b) {
+        return forest[a.first][a.second] < forest[b.first][b.second];
+    };
+    sort(trees.begin(), trees.end(), cmp);
+
+    int ans = 0;
+    int bx = 0, by = 0;
+    for (auto [ex, ey] : trees) {
+        int step = bfs(forest, bx, by, ex, ey);
+        if (step == -1) {
+            return -1;
+        }
+        ans += step;
+        bx = ex, by = ey;
+    }
+    return ans;
+}
+
+bool vis[55][55];
+int bfs(vector<vector<int>>& forest, int bx, int by, int ex, int ey) { 
+    if (bx == ex && by == ey) {
+        return 0;
+    }
+    int m = forest.size(), n = forest[0].size();
+    memset(vis, 0, sizeof(vis));
+    queue<pair<int, int>> que;
+    que.emplace(bx, by);
+    int step = 0;
+    while (!que.empty()) {
+        step++;
+        int cnt = que.size();
+        while (cnt--) {
+            auto [x, y] = que.front();
+            que.pop();
+            for (int k = 0; k < 4; ++k) {
+                int nx = x + dx[k], ny = y + dy[k];
+                if (nx >= 0 && nx < m && ny >= 0 && ny < n 
+                && forest[nx][ny] != 0 && vis[nx][ny] == false) {
+                    if (nx == ex && ny == ey) {
+                        return step;
+                    }
+                    vis[nx][ny] = true;
+                    que.emplace(nx, ny);
+                }
+            }
+        }
+    }
+    return -1;
+}
+```
+
