@@ -112,6 +112,122 @@ int minMutation(string startGene, string endGene, vector<string>& bank) {
 }
 ```
 
+## [542. 01 矩阵](https://leetcode.cn/problems/01-matrix/)
+
+> 给定一个由 `0` 和 `1` 组成的矩阵 `mat` ，请输出一个大小相同的矩阵，其中每一个格子是 `mat` 中对应位置元素到最近的 `0` 的距离。
+>
+> 两个相邻元素间的距离为 `1` 。
+>
+> 
+>
+> **示例 1：**
+>
+> <img src="https://pic.leetcode-cn.com/1626667201-NCWmuP-image.png" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入：mat = [[0,0,0],[0,1,0],[0,0,0]]
+> 输出：[[0,0,0],[0,1,0],[0,0,0]]
+> ```
+>
+> **示例 2：**
+>
+> <img src="https://pic.leetcode-cn.com/1626667205-xFxIeK-image.png" alt="img" style="zoom:50%;" />
+>
+> ```
+> 输入：mat = [[0,0,0],[0,1,0],[1,1,1]]
+> 输出：[[0,0,0],[0,1,0],[1,2,1]]
+> ```
+>
+> 
+>
+> **提示：**
+>
+> - `m == mat.length`
+> - `n == mat[i].length`
+> - `1 <= m, n <= 104`
+> - `1 <= m * n <= 104`
+> - `mat[i][j] is either 0 or 1.`
+> - `mat` 中至少有一个 `0 `
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+vector<vector<int>> updateMatrix(vector<vector<int>>& mat) {
+    // 正难则反
+    // 把0当作起点，1当作终点
+    int m = mat.size(), n = mat[0].size();
+    vector<vector<bool>> vis(m, vector<bool>(n, false));
+    queue<pair<int, int>> que;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (mat[i][j] == 0) {
+                que.emplace(i, j);
+                vis[i][j] = true;
+            }
+        }
+    }
+
+    vector<vector<int>> ans(mat);
+    int step = 0;
+    while (!que.empty()) {
+        step++;
+        int cnt = que.size();
+        while (cnt--) {
+            auto [x, y] = que.front();
+            que.pop();
+            for (int k = 0; k < 4; ++k) {
+                int nx = x + dx[k], ny = y + dy[k];
+                if (nx >= 0 && nx < m && ny >= 0 && ny < n && !vis[nx][ny]) {
+                    vis[nx][ny] = true;
+                    ans[nx][ny] = step;
+                    que.emplace(nx, ny);
+                }
+            }
+        }
+    }
+    return ans;
+}
+```
+
+**优化**
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+vector<vector<int>> updateMatrix(vector<vector<int>>& mat) {
+    // 正难则反
+    // 把0当作起点，1当作终点
+    int m = mat.size(), n = mat[0].size();
+    vector<vector<int>> dist(m, vector<int>(n, -1));
+    queue<pair<int, int>> que;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (mat[i][j] == 0) {
+                que.emplace(i, j);
+                dist[i][j] = 0;
+            }
+        }
+    }
+
+    while (!que.empty()) {
+        auto [x, y] = que.front();
+        que.pop();
+        for (int k = 0; k < 4; ++k) {
+            int nx = x + dx[k], ny = y + dy[k];
+            if (nx >= 0 && nx < m && ny >= 0 && ny < n && dist[nx][ny] == -1) {
+                dist[nx][ny] = dist[x][y] + 1;
+                que.emplace(nx, ny);
+            }
+        }
+    }
+    return dist;
+}
+```
+
+
+
 ## [1926. 迷宫中离入口最近的出口](https://leetcode.cn/problems/nearest-exit-from-entrance-in-maze/)
 
 > 给你一个 `m x n` 的迷宫矩阵 `maze` （**下标从 0 开始**），矩阵中有空格子（用 `'.'` 表示）和墙（用 `'+'` 表示）。同时给你迷宫的入口 `entrance` ，用 `entrance = [entrancerow, entrancecol]` 表示你一开始所在格子的行和列。
