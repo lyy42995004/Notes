@@ -226,7 +226,163 @@ vector<vector<int>> updateMatrix(vector<vector<int>>& mat) {
 }
 ```
 
+## [1162. 地图分析](https://leetcode.cn/problems/as-far-from-land-as-possible/)
 
+> 你现在手里有一份大小为 `n x n` 的 网格 `grid`，上面的每个 单元格 都用 `0` 和 `1` 标记好了。其中 `0` 代表海洋，`1` 代表陆地。
+>
+> 请你找出一个海洋单元格，这个海洋单元格到离它最近的陆地单元格的距离是最大的，并返回该距离。如果网格上只有陆地或者海洋，请返回 `-1`。
+>
+> 我们这里说的距离是「曼哈顿距离」（ Manhattan Distance）：`(x0, y0)` 和 `(x1, y1)` 这两个单元格之间的距离是 `|x0 - x1| + |y0 - y1|` 。
+>
+>  
+>
+> **示例 1：**
+>
+> **![img](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2019/08/17/1336_ex1.jpeg)**
+>
+> ```
+> 输入：grid = [[1,0,1],[0,0,0],[1,0,1]]
+> 输出：2
+> 解释： 
+> 海洋单元格 (1, 1) 和所有陆地单元格之间的距离都达到最大，最大距离为 2。
+> ```
+>
+> **示例 2：**
+>
+> **![img](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2019/08/17/1336_ex2.jpeg)**
+>
+> ```
+> 输入：grid = [[1,0,0],[0,0,0],[0,0,0]]
+> 输出：4
+> 解释： 
+> 海洋单元格 (2, 2) 和所有陆地单元格之间的距离都达到最大，最大距离为 4。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `n == grid.length`
+> - `n == grid[i].length`
+> - `1 <= n <= 100`
+> - `grid[i][j]` 不是 `0` 就是 `1`
+
+```cpp
+const int dx[4] = {0, 0, -1, 1};
+const int dy[4] = {1, -1, 0, 0};
+
+int maxDistance(vector<vector<int>>& grid) {
+    queue<pair<int, int>> que;
+    int m = grid.size(), n = grid[0].size();
+    vector<vector<int>> dist(m, vector<int>(n, -1));
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (grid[i][j] == 1) {
+                que.emplace(i, j);
+                dist[i][j] = 0;
+            }
+        }
+    }
+    int ans = -1;
+    while (!que.empty()) {
+        auto [x, y] = que.front();
+        que.pop();
+        for (int k = 0; k < 4; ++k) {
+            int nx = x + dx[k], ny = y + dy[k];
+            if (nx >= 0 && nx < m && ny >= 0 && ny < n && dist[nx][ny] == -1) {
+                dist[nx][ny] = dist[x][y] + 1;
+                ans = max(ans, dist[nx][ny]);
+                que.emplace(nx, ny);
+            }
+        }
+    }
+    return ans;
+}
+```
+
+## [1765. 地图中的最高点](https://leetcode.cn/problems/map-of-highest-peak/)
+
+>给你一个大小为 `m x n` 的整数矩阵 `isWater` ，它代表了一个由 **陆地** 和 **水域** 单元格组成的地图。
+>
+>- 如果 `isWater[i][j] == 0` ，格子 `(i, j)` 是一个 **陆地** 格子。
+>- 如果 `isWater[i][j] == 1` ，格子 `(i, j)` 是一个 **水域** 格子。
+>
+>你需要按照如下规则给每个单元格安排高度：
+>
+>- 每个格子的高度都必须是非负的。
+>- 如果一个格子是 **水域** ，那么它的高度必须为 `0` 。
+>- 任意相邻的格子高度差 **至多** 为 `1` 。当两个格子在正东、南、西、北方向上相互紧挨着，就称它们为相邻的格子。（也就是说它们有一条公共边）
+>
+>找到一种安排高度的方案，使得矩阵中的最高高度值 **最大** 。
+>
+>请你返回一个大小为 `m x n` 的整数矩阵 `height` ，其中 `height[i][j]` 是格子 `(i, j)` 的高度。如果有多种解法，请返回 **任意一个** 。
+>
+> 
+>
+>**示例 1：**
+>
+>**<img src="https://assets.leetcode.com/uploads/2021/01/10/screenshot-2021-01-11-at-82045-am.png" alt="img" style="zoom:50%;" />**
+>
+>```
+>输入：isWater = [[0,1],[0,0]]
+>输出：[[1,0],[2,1]]
+>解释：上图展示了给各个格子安排的高度。
+>蓝色格子是水域格，绿色格子是陆地格。
+>```
+>
+>**示例 2：**
+>
+>**<img src="https://assets.leetcode.com/uploads/2021/01/10/screenshot-2021-01-11-at-82050-am.png" alt="img" style="zoom:50%;" />**
+>
+>```
+>输入：isWater = [[0,0,1],[1,0,0],[0,0,0]]
+>输出：[[1,1,0],[0,1,1],[1,2,2]]
+>解释：所有安排方案中，最高可行高度为 2 。
+>任意安排方案中，只要最高高度为 2 且符合上述规则的，都为可行方案。
+>```
+>
+> 
+>
+>**提示：**
+>
+>- `m == isWater.length`
+>- `n == isWater[i].length`
+>- `1 <= m, n <= 1000`
+>- `isWater[i][j]` 要么是 `0` ，要么是 `1` 。
+>- 至少有 **1** 个水域格子。
+>
+>**注意：**本题与 [542](https://leetcode.cn/problems/01-matrix/) 题相同。
+
+```cpp
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+vector<vector<int>> highestPeak(vector<vector<int>>& isWater) {
+    queue<pair<int, int>> que;
+    int m = isWater.size(), n = isWater[0].size();
+    vector<vector<int>> ans(m, vector<int>(n, -1));
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (isWater[i][j] == 1) {
+                que.emplace(i, j);
+                ans[i][j] = 0;
+            }
+        }
+    }
+    while (!que.empty()) {
+        auto [x, y] = que.front();
+        que.pop();
+        for (int k = 0; k < 4; ++k) {
+            int nx = x + dx[k], ny = y + dy[k];
+            if (nx >= 0 && nx < m && ny >= 0 && ny < n && ans[nx][ny] == -1) {
+                ans[nx][ny] = ans[x][y] + 1;
+                que.emplace(nx, ny);
+            }
+        }
+    }
+    return ans;
+}
+```
 
 ## [1926. 迷宫中离入口最近的出口](https://leetcode.cn/problems/nearest-exit-from-entrance-in-maze/)
 
