@@ -179,3 +179,119 @@ vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
 }
 ```
 
+## [LCR 114. 火星词典](https://leetcode.cn/problems/Jf1JuT/)
+
+> 现有一种使用英语字母的外星文语言，这门语言的字母顺序与英语顺序不同。
+>
+> 给定一个字符串列表 `words` ，作为这门语言的词典，`words` 中的字符串已经 **按这门新语言的字母顺序进行了排序** 。
+>
+> 请你根据该词典还原出此语言中已知的字母顺序，并 **按字母递增顺序** 排列。若不存在合法字母顺序，返回 `""` 。若存在多种可能的合法字母顺序，返回其中 **任意一种** 顺序即可。
+>
+> 字符串 `s` **字典顺序小于** 字符串 `t` 有两种情况：
+>
+> - 在第一个不同字母处，如果 `s` 中的字母在这门外星语言的字母顺序中位于 `t` 中字母之前，那么 `s` 的字典顺序小于 `t` 。
+> - 如果前面 `min(s.length, t.length)` 字母都相同，那么 `s.length < t.length` 时，`s` 的字典顺序也小于 `t` 。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：words = ["wrt","wrf","er","ett","rftt"]
+> 输出："wertf"
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：words = ["z","x"]
+> 输出："zx"
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：words = ["z","x","z"]
+> 输出：""
+> 解释：不存在合法字母顺序，因此返回 ""。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= words.length <= 100`
+> - `1 <= words[i].length <= 100`
+> - `words[i]` 仅由小写英文字母组成
+>
+>  
+>
+> 注意：本题与主站 269 题相同： https://leetcode-cn.com/problems/alien-dictionary/
+
+```cpp
+unordered_map<char, unordered_set<char>> edges;
+unordered_map<char, int> in;
+
+string alienOrder(vector<string>& words) {
+    for (auto& s : words) {
+        for (auto ch : s) {
+            in[ch] = 0;
+        }
+    }
+    int n = words.size();
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            if (add(words[i], words[j]) == false) {
+                return "";
+            }
+        }
+    }
+
+    queue<char> que;
+    for (auto& [a, b] : in) {
+        if (b == 0) {
+            que.push(a);
+        }
+    }
+    string ans;
+    while (!que.empty()) {
+        char t = que.front(); que.pop();
+        ans += t;
+        for (char ch : edges[t]) {
+            --in[ch];
+            if (in[ch] == 0) {
+                que.push(ch);
+            }
+        }
+    }
+    for (auto& [a, b] : in) {
+        if (b != 0) {
+            return "";
+        }
+    }
+    return ans;
+}
+
+bool add(const string& s1, const string& s2) {
+    int len1 = s1.size(), len2 = s2.size();
+    int n = min(len1, len2);
+    int i = 0;
+    while (i < n) {
+        if (s1[i] != s2[i]) {
+            char ch1 = s1[i], ch2 = s2[i];
+            if (!edges.count(ch1) || !edges[ch1].count(ch2)) {
+                edges[ch1].insert(ch2);
+                ++in[ch2];
+            }
+            break;
+        }
+        i++;
+    }
+    // 如果 s1 是 s2 的前缀且 s1 比 s2 长（如 "abc" 在 "ab" 之后），则非法
+    if (i == n && len1 > len2) {
+        return false;
+    }
+    return true;
+}
+```
+
