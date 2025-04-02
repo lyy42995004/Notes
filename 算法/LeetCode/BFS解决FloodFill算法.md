@@ -257,7 +257,7 @@ int numIslands(vector<vector<char>>& grid) {
                     for (int k = 0; k < 4; ++k) {
                         int nx = x + dx[k], ny = y + dy[k];
                         if (nx >= 0 && nx < m && ny >= 0 && ny < n && grid[nx][ny] == '1') {
-                            grid[nx][ny] = '0'; // 立即修改，否则可能会导致重复入队
+                            grid[nx][ny] = '0';
                             que.emplace(nx, ny);
                         }
                     }
