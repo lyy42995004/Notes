@@ -1,5 +1,83 @@
 # 简单
 
+## [1863. 找出所有子集的异或总和再求和](https://leetcode.cn/problems/sum-of-all-subset-xor-totals/)
+
+> 一个数组的 **异或总和** 定义为数组中所有元素按位 `XOR` 的结果；如果数组为 **空** ，则异或总和为 `0` 。
+>
+> - 例如，数组 `[2,5,6]` 的 **异或总和** 为 `2 XOR 5 XOR 6 = 1` 。
+>
+> 给你一个数组 `nums` ，请你求出 `nums` 中每个 **子集** 的 **异或总和** ，计算并返回这些值相加之 **和** 。
+>
+> **注意：**在本题中，元素 **相同** 的不同子集应 **多次** 计数。
+>
+> 数组 `a` 是数组 `b` 的一个 **子集** 的前提条件是：从 `b` 删除几个（也可能不删除）元素能够得到 `a` 。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：nums = [1,3]
+> 输出：6
+> 解释：[1,3] 共有 4 个子集：
+> - 空子集的异或总和是 0 。
+> - [1] 的异或总和为 1 。
+> - [3] 的异或总和为 3 。
+> - [1,3] 的异或总和为 1 XOR 3 = 2 。
+> 0 + 1 + 3 + 2 = 6
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：nums = [5,1,6]
+> 输出：28
+> 解释：[5,1,6] 共有 8 个子集：
+> - 空子集的异或总和是 0 。
+> - [5] 的异或总和为 5 。
+> - [1] 的异或总和为 1 。
+> - [6] 的异或总和为 6 。
+> - [5,1] 的异或总和为 5 XOR 1 = 4 。
+> - [5,6] 的异或总和为 5 XOR 6 = 3 。
+> - [1,6] 的异或总和为 1 XOR 6 = 7 。
+> - [5,1,6] 的异或总和为 5 XOR 1 XOR 6 = 2 。
+> 0 + 5 + 1 + 6 + 4 + 3 + 7 + 2 = 28
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：nums = [3,4,5,6,7,8]
+> 输出：480
+> 解释：每个子集的全部异或总和值之和为 480 。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= nums.length <= 12`
+> - `1 <= nums[i] <= 20`
+
+```cpp
+int ans = 0;
+int path = 0;
+
+int subsetXORSum(vector<int>& nums) {
+    dfs(nums, 0);
+    return ans;
+}
+
+void dfs(vector<int>& nums, int pos) {
+    ans += path;
+    for (int i = pos; i < nums.size(); ++i) {
+        path ^= nums[i];
+        dfs(nums, i + 1);
+        path ^= nums[i];
+    }
+}
+```
+
 ## [面试题 08.06. 汉诺塔问题](https://leetcode.cn/problems/hanota-lcci/)
 
 > 在经典汉诺塔问题中，有 3 根柱子及 N 个不同大小的穿孔圆盘，盘子可以滑入任意一根柱子。一开始，所有盘子自上而下按升序依次套在第一根柱子上(即每一个盘子只能放在更大的盘子上面)。移动圆盘时受到以下限制:
@@ -167,6 +245,66 @@ void dfs(vector<int>& nums) {
 }
 ```
 
+## [47. 全排列 II](https://leetcode.cn/problems/permutations-ii/)
+
+>  给定一个可包含重复数字的序列 `nums` ，***按任意顺序*** 返回所有不重复的全排列。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：nums = [1,1,2]
+> 输出：
+> [[1,1,2],
+>  [1,2,1],
+>  [2,1,1]]
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：nums = [1,2,3]
+> 输出：[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= nums.length <= 8`
+> - `-10 <= nums[i] <= 10`
+
+```cpp
+vector<vector<int>> ans;
+vector<int> path;
+vector<bool> vis;
+
+vector<vector<int>> permuteUnique(vector<int>& nums) {
+    sort(nums.begin(), nums.end());
+    vis = vector<bool>(nums.size(), false);
+    dfs(nums, 0);
+    return ans;
+}
+
+void dfs(vector<int>& nums, int pos) {
+    if (path.size() == nums.size()) {
+        ans.push_back(path);
+        return;
+    }
+    for (int i = 0; i < nums.size(); ++i) {
+        if (vis[i] == true || (i > 0 && nums[i - 1] == nums[i] && vis[i - 1] == true)) {
+            continue;
+        }
+        path.push_back(nums[i]);
+        vis[i] = true;
+        dfs(nums, i + 1);
+        vis[i] = false;
+        path.pop_back();
+    }
+}
+```
+
 ## [78. 子集](https://leetcode.cn/problems/subsets/)
 
 > 给你一个整数数组 `nums` ，数组中的元素 **互不相同** 。返回该数组所有可能的子集（幂集）。
@@ -216,6 +354,27 @@ void dfs(vector<int>& nums, int pos) {
     path.push_back(nums[pos]);
     dfs(nums, pos + 1);
     path.pop_back();
+}
+```
+
+另一种方法
+
+```cpp
+vector<vector<int>> ans;
+vector<int> path;
+
+vector<vector<int>> subsets(vector<int>& nums) {
+    dfs(nums, 0);
+    return ans;
+}
+
+void dfs(vector<int>& nums, int pos) {
+    ans.push_back(path);
+    for (int i = pos; i < nums.size(); ++i) {
+        path.push_back(nums[i]);
+        dfs(nums, i + 1);
+        path.pop_back();
+    }
 }
 ```
 
