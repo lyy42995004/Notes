@@ -690,3 +690,190 @@ void dfs(vector<int>& nums, int target, int pos, int sum) {
 }
 ```
 
+## [526. 优美的排列](https://leetcode.cn/problems/beautiful-arrangement/)
+
+> 假设有从 1 到 n 的 n 个整数。用这些整数构造一个数组 `perm`（**下标从 1 开始**），只要满足下述条件 **之一** ，该数组就是一个 **优美的排列** ：
+>
+> - `perm[i]` 能够被 `i` 整除
+> - `i` 能够被 `perm[i]` 整除
+>
+> 给你一个整数 `n` ，返回可以构造的 **优美排列** 的 **数量** 。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：n = 2
+> 输出：2
+> 解释：
+> 第 1 个优美的排列是 [1,2]：
+>     - perm[1] = 1 能被 i = 1 整除
+>     - perm[2] = 2 能被 i = 2 整除
+> 第 2 个优美的排列是 [2,1]:
+>     - perm[1] = 2 能被 i = 1 整除
+>     - i = 2 能被 perm[2] = 1 整除
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：n = 1
+> 输出：1
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= n <= 15`
+
+```cpp
+int ans;
+vector<bool> vis;
+
+int countArrangement(int n) {
+    vis = vector<bool>(n, false);
+    dfs(n, 1);
+    return ans;
+}
+
+void dfs(int n, int pos) {
+    if (pos == n + 1) {
+        ans++;
+        return;
+    }
+    for (int i = 1; i <= n; ++i) {
+        if (vis[i] == false && (i % pos == 0 || pos % i == 0)) {
+            vis[i] = true;
+            dfs(n, pos + 1);
+            vis[i] = false;
+        }
+    }
+}
+```
+
+## [784. 字母大小写全排列](https://leetcode.cn/problems/letter-case-permutation/)
+
+> 给定一个字符串 `s` ，通过将字符串 `s` 中的每个字母转变大小写，我们可以获得一个新的字符串。
+>
+> 返回 *所有可能得到的字符串集合* 。以 **任意顺序** 返回输出。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：s = "a1b2"
+> 输出：["a1b2", "a1B2", "A1b2", "A1B2"]
+> ```
+>
+> **示例 2:**
+>
+> ```
+> 输入: s = "3z4"
+> 输出: ["3z4","3Z4"]
+> ```
+>
+>  
+>
+> **提示:**
+>
+> - `1 <= s.length <= 12`
+> - `s` 由小写英文字母、大写英文字母和数字组成
+
+```cpp
+vector<string> ans;
+
+vector<string> letterCasePermutation(string s) {
+    dfs(s, 0);
+    return ans;
+}
+
+void dfs(string s, int pos) {
+    if (pos == s.size()) {
+        ans.push_back(s);
+        return;
+    }
+
+    if (isdigit(s[pos])) {
+        dfs(s, pos + 1);
+    } else {
+        s[pos] = tolower(s[pos]);
+        dfs(s, pos + 1);
+        s[pos] = toupper(s[pos]);
+        dfs(s, pos + 1);
+    }
+}
+```
+
+# 困难
+
+## [51. N 皇后](https://leetcode.cn/problems/n-queens/)
+
+> 按照国际象棋的规则，皇后可以攻击与之处在同一行或同一列或同一斜线上的棋子。
+>
+> **n 皇后问题** 研究的是如何将 `n` 个皇后放置在 `n×n` 的棋盘上，并且使皇后彼此之间不能相互攻击。
+>
+> 给你一个整数 `n` ，返回所有不同的 **n 皇后问题** 的解决方案。
+>
+> 每一种解法包含一个不同的 **n 皇后问题** 的棋子放置方案，该方案中 `'Q'` 和 `'.'` 分别代表了皇后和空位。
+>
+>  
+>
+> **示例 1：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/11/13/queens.jpg" alt="img" style="zoom: 80%;" />
+>
+> ```
+> 输入：n = 4
+> 输出：[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]
+> 解释：如上图所示，4 皇后问题存在两个不同的解法。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：n = 1
+> 输出：[["Q"]]
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= n <= 9`
+
+```cpp
+vector<vector<string>> ans;
+vector<string> path;
+bool vis[10];
+bool vis1[20]; // y - x = b
+bool vis2[20]; // y + x = b
+
+vector<vector<string>> solveNQueens(int n) {
+    path.resize(n);
+    for (int i = 0; i < n; ++i) {
+        path[i].append(n, '.');
+    }
+    dfs(n, 0);
+    return ans;
+}
+
+void dfs(int n, int y) {
+    if (y == n) {
+        ans.push_back(path);
+        return;
+    }
+    for (int x = 0; x < n; ++x) {
+        if (!vis[x] && !vis1[y - x + 10] && !vis2[y + x]) {
+            path[y][x] = 'Q';
+            vis[x] = vis1[y - x + 10] = vis2[y + x] = true;
+            dfs(n, y + 1);
+            path[y][x] = '.';
+            vis[x] = vis1[y - x + 10] = vis2[y + x] = false;
+        }
+    }
+}
+```
+
