@@ -628,6 +628,93 @@ void dfs(vector<int>& nums, int pos) {
 }
 ```
 
+## [79. 单词搜索](https://leetcode.cn/problems/word-search/)
+
+> 给定一个 `m x n` 二维字符网格 `board` 和一个字符串单词 `word` 。如果 `word` 存在于网格中，返回 `true` ；否则，返回 `false` 。
+>
+> 单词必须按照字母顺序，通过相邻的单元格内的字母构成，其中“相邻”单元格是那些水平相邻或垂直相邻的单元格。同一个单元格内的字母不允许被重复使用。
+>
+>  
+>
+> **示例 1：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/11/04/word2.jpg" alt="img" style="zoom:67%;" />
+>
+> ```
+> 输入：board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
+> 输出：true
+> ```
+>
+> **示例 2：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/11/04/word-1.jpg" alt="img" style="zoom:67%;" />
+>
+> ```
+> 输入：board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "SEE"
+> 输出：true
+> ```
+>
+> **示例 3：**
+>
+> <img src="https://assets.leetcode.com/uploads/2020/10/15/word3.jpg" alt="img" style="zoom:67%;" />
+>
+> ```
+> 输入：board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCB"
+> 输出：false
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `m == board.length`
+> - `n = board[i].length`
+> - `1 <= m, n <= 6`
+> - `1 <= word.length <= 15`
+> - `board` 和 `word` 仅由大小写英文字母组成
+
+```cpp
+vector<vector<bool>> vis;
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+bool exist(vector<vector<char>>& board, string word) {
+    int n = board.size(), m = board[0].size();
+    vis = vector<vector<bool>>(n, vector<bool>(m, false));
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (board[i][j] == word[0]) {
+                vis[i][j] = true;
+                if (dfs(board, word, i, j, 1) == true) {
+                    return true;
+                }
+                vis[i][j] = false;
+            }
+        }
+    }
+    return false;
+}
+
+bool dfs(vector<vector<char>>& board, const string& word, int x, int y, int pos) {
+    if (pos == word.size()) {
+        return true;
+    }
+    int n = board.size(), m = board[0].size();
+    for (int k = 0; k < 4; ++k) {
+        int nx = x + dx[k], ny = y + dy[k];
+        if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+            && board[nx][ny] == word[pos] && vis[nx][ny] == false) {
+            vis[nx][ny] = true;
+            if (dfs(board, word, nx, ny, pos + 1) == true) {
+                return true;
+            }
+            vis[nx][ny] = false;
+        }
+    }
+    return false;
+}
+```
+
 ## [494. 目标和](https://leetcode.cn/problems/target-sum/)
 
 > 给你一个非负整数数组 `nums` 和一个整数 `target` 。
@@ -807,7 +894,161 @@ void dfs(string s, int pos) {
 }
 ```
 
+## [1219. 黄金矿工](https://leetcode.cn/problems/path-with-maximum-gold/)
+
+> 你要开发一座金矿，地质勘测学家已经探明了这座金矿中的资源分布，并用大小为 `m * n` 的网格 `grid` 进行了标注。每个单元格中的整数就表示这一单元格中的黄金数量；如果该单元格是空的，那么就是 `0`。
+>
+> 为了使收益最大化，矿工需要按以下规则来开采黄金：
+>
+> - 每当矿工进入一个单元，就会收集该单元格中的所有黄金。
+> - 矿工每次可以从当前位置向上下左右四个方向走。
+> - 每个单元格只能被开采（进入）一次。
+> - **不得开采**（进入）黄金数目为 `0` 的单元格。
+> - 矿工可以从网格中 **任意一个** 有黄金的单元格出发或者是停止。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：grid = [[0,6,0],[5,8,7],[0,9,0]]
+> 输出：24
+> 解释：
+> [[0,6,0],
+>  [5,8,7],
+>  [0,9,0]]
+> 一种收集最多黄金的路线是：9 -> 8 -> 7。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：grid = [[1,0,7],[2,0,6],[3,4,5],[0,3,0],[9,0,20]]
+> 输出：28
+> 解释：
+> [[1,0,7],
+>  [2,0,6],
+>  [3,4,5],
+>  [0,3,0],
+>  [9,0,20]]
+> 一种收集最多黄金的路线是：1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= grid.length, grid[i].length <= 15`
+> - `0 <= grid[i][j] <= 100`
+> - 最多 **25** 个单元格中有黄金。
+
+```cpp
+int ans = 0, path = 0;
+vector<vector<bool>> vis;
+const int dx[4] = {0, 0, 1, -1};
+const int dy[4] = {1, -1, 0, 0};
+
+int getMaximumGold(vector<vector<int>>& grid) {
+    int n = grid.size(), m = grid[0].size();
+    vis = vector<vector<bool>>(n, vector<bool>(m, false));
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (grid[i][j] != 0) {
+                dfs(grid, i, j);
+            }
+        }
+    }
+    return ans;
+}
+
+void dfs(vector<vector<int>>& grid, int x, int y) {
+    path += grid[x][y];
+    vis[x][y] = true;
+    ans = max(ans, path);
+    int n = grid.size(), m = grid[0].size();
+    for (int k = 0; k < 4; ++k) {
+        int nx = x + dx[k], ny = y + dy[k];
+        if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+            && grid[nx][ny] != 0 && vis[nx][ny] == false) {
+            dfs(grid, nx, ny);
+        }
+    }
+    path -= grid[x][y];
+    vis[x][y] = false;
+}
+```
+
 # 困难
+
+## [37. 解数独](https://leetcode.cn/problems/sudoku-solver/)
+
+> 编写一个程序，通过填充空格来解决数独问题。
+>
+> 数独的解法需 **遵循如下规则**：
+>
+> 1. 数字 `1-9` 在每一行只能出现一次。
+> 2. 数字 `1-9` 在每一列只能出现一次。
+> 3. 数字 `1-9` 在每一个以粗实线分隔的 `3x3` 宫内只能出现一次。（请参考示例图）
+>
+> 数独部分空格内已填入了数字，空白格用 `'.'` 表示。
+>
+>  
+>
+> **示例 1：**
+>
+> ![img](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2021/04/12/250px-sudoku-by-l2g-20050714svg.png)
+>
+> ```
+> 输入：board = [["5","3",".",".","7",".",".",".","."],["6",".",".","1","9","5",".",".","."],[".","9","8",".",".",".",".","6","."],["8",".",".",".","6",".",".",".","3"],["4",".",".","8",".","3",".",".","1"],["7",".",".",".","2",".",".",".","6"],[".","6",".",".",".",".","2","8","."],[".",".",".","4","1","9",".",".","5"],[".",".",".",".","8",".",".","7","9"]]
+> 输出：[["5","3","4","6","7","8","9","1","2"],["6","7","2","1","9","5","3","4","8"],["1","9","8","3","4","2","5","6","7"],["8","5","9","7","6","1","4","2","3"],["4","2","6","8","5","3","7","9","1"],["7","1","3","9","2","4","8","5","6"],["9","6","1","5","3","7","2","8","4"],["2","8","7","4","1","9","6","3","5"],["3","4","5","2","8","6","1","7","9"]]
+> 解释：输入的数独如上图所示，唯一有效的解决方案如下所示：
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `board.length == 9`
+> - `board[i].length == 9`
+> - `board[i][j]` 是一位数字或者 `'.'`
+> - 题目数据 **保证** 输入数独仅有一个解
+
+```cpp
+bool row[10][10], col[10][10], grid[3][3][10];
+
+void solveSudoku(vector<vector<char>>& board) {
+    for (int i = 0; i < 9; ++i) {
+        for (int j = 0; j < 9; ++j) {
+            if (board[i][j] != '.') {
+                int num = board[i][j] - '0';
+                row[i][num] = col[j][num] = grid[i/3][j/3][num] = true;
+            }
+        }
+    }
+    dfs(board);
+}
+
+bool dfs(vector<vector<char>>& board) {
+    for (int i = 0; i < 9; ++i) {
+        for (int j = 0; j < 9; ++j) {
+            if (board[i][j] == '.') {
+                for (int num = 1; num < 10; ++num) {
+                    if (!row[i][num] && !col[j][num] && !grid[i/3][j/3][num]) {
+                        board[i][j] = num + '0';
+                        row[i][num] = col[j][num] = grid[i/3][j/3][num] = true;
+                        if (dfs(board) == true)
+                            return true; 
+                        board[i][j] = '.';
+                        row[i][num] = col[j][num] = grid[i/3][j/3][num] = false;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+```
 
 ## [51. N 皇后](https://leetcode.cn/problems/n-queens/)
 
@@ -844,6 +1085,8 @@ void dfs(string s, int pos) {
 >
 > - `1 <= n <= 9`
 
+通过`x = 0`时`y = b`来判断是否当前斜线上有无皇后。
+
 ```cpp
 vector<vector<string>> ans;
 vector<string> path;
@@ -872,6 +1115,101 @@ void dfs(int n, int y) {
             dfs(n, y + 1);
             path[y][x] = '.';
             vis[x] = vis1[y - x + 10] = vis2[y + x] = false;
+        }
+    }
+}
+```
+
+## [980. 不同路径 III](https://leetcode.cn/problems/unique-paths-iii/)
+
+> 在二维网格 `grid` 上，有 4 种类型的方格：
+>
+> - `1` 表示起始方格。且只有一个起始方格。
+> - `2` 表示结束方格，且只有一个结束方格。
+> - `0` 表示我们可以走过的空方格。
+> - `-1` 表示我们无法跨越的障碍。
+>
+> 返回在四个方向（上、下、左、右）上行走时，从起始方格到结束方格的不同路径的数目**。**
+>
+> **每一个无障碍方格都要通过一次，但是一条路径中不能重复通过同一个方格**。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：[[1,0,0,0],[0,0,0,0],[0,0,2,-1]]
+> 输出：2
+> 解释：我们有以下两条路径：
+> 1. (0,0),(0,1),(0,2),(0,3),(1,3),(1,2),(1,1),(1,0),(2,0),(2,1),(2,2)
+> 2. (0,0),(1,0),(2,0),(2,1),(1,1),(0,1),(0,2),(0,3),(1,3),(1,2),(2,2)
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：[[1,0,0,0],[0,0,0,0],[0,0,0,2]]
+> 输出：4
+> 解释：我们有以下四条路径： 
+> 1. (0,0),(0,1),(0,2),(0,3),(1,3),(1,2),(1,1),(1,0),(2,0),(2,1),(2,2),(2,3)
+> 2. (0,0),(0,1),(1,1),(1,0),(2,0),(2,1),(2,2),(1,2),(0,2),(0,3),(1,3),(2,3)
+> 3. (0,0),(1,0),(2,0),(2,1),(2,2),(1,2),(1,1),(0,1),(0,2),(0,3),(1,3),(2,3)
+> 4. (0,0),(1,0),(2,0),(2,1),(1,1),(0,1),(0,2),(0,3),(1,3),(1,2),(2,2),(2,3)
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：[[0,1],[2,0]]
+> 输出：0
+> 解释：
+> 没有一条路能完全穿过每一个空的方格一次。
+> 请注意，起始和结束方格可以位于网格中的任意位置。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= grid.length * grid[0].length <= 20`
+
+``` cpp
+int ans = 0, sum = 0; // sum 0的个数
+vector<vector<bool>> vis;
+const int dx[4] = {0, 0, -1, 1};
+const int dy[4] = {1, -1, 0, 0};
+
+int uniquePathsIII(vector<vector<int>>& grid) {
+    int n = grid.size(), m = grid[0].size();
+    vis = vector<vector<bool>> (n, vector<bool>(m, false));
+    int x, y;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < m; ++j) {
+            if (grid[i][j] == 1) {
+                vis[i][j] = true;
+                x = i, y = j;
+            } else if (grid[i][j] == 0) {
+                sum++;
+            }
+        }
+    }
+    dfs(grid, x, y, 0);
+    return ans;
+}
+
+void dfs(vector<vector<int>>& grid, int x, int y, int cnt) {
+    if (grid[x][y] == 2 && cnt == sum + 1) { // cnt 0+2 的个数
+        ans++;
+        return;
+    }
+    int n = grid.size(), m = grid[0].size();
+    for (int k = 0; k < 4; ++k) {
+        int nx = x + dx[k], ny = y + dy[k];
+        if (nx >= 0 && nx < n && ny >= 0 && ny < m 
+            && grid[nx][ny] != -1 && vis[nx][ny] == false) {
+            vis[nx][ny] = true;
+            dfs(grid, nx, ny, cnt + 1);
+            vis[nx][ny] = false;
         }
     }
 }
