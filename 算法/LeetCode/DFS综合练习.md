@@ -715,6 +715,81 @@ bool dfs(vector<vector<char>>& board, const string& word, int x, int y, int pos)
 }
 ```
 
+## [131. 分割回文串](https://leetcode.cn/problems/palindrome-partitioning/)
+
+> 给你一个字符串 `s`，请你将 `s` 分割成一些 子串，使每个子串都是 **回文串** 。返回 `s` 所有可能的分割方案。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：s = "aab"
+> 输出：[["a","a","b"],["aa","b"]]
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：s = "a"
+> 输出：[["a"]]
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= s.length <= 16`
+> - `s` 仅由小写英文字母组成
+
+```cpp
+vector<vector<string>> ans;
+vector<string> path;
+unordered_set<string> hash;
+unordered_set<string> nonhash;
+
+vector<vector<string>> partition(string s) {
+    dfs(s, 0);
+    return ans;
+}
+
+void dfs(const string& s, int pos) {
+    if (pos == s.size()) {
+        ans.push_back(path);
+        return;
+    }
+
+    // pos开始，i结尾
+    for (int i = pos; i < s.size(); ++i) {
+        string str = s.substr(pos, i - pos + 1);
+        if (isPalindrome(str)) {
+            path.push_back(str);
+            dfs(s, i + 1);
+            path.pop_back();
+        }
+    }
+}
+
+bool isPalindrome(const string& s) {
+    if (hash.count(s)) {
+        return true;
+    }
+    if (nonhash.count(s)) {
+        return false;
+    }
+    int left = 0, right = s.size() - 1;
+    while (left < right) {
+        if (s[left] != s[right]) {
+            nonhash.insert(s);
+            return false;
+        }
+        left++, right--;
+    }
+    hash.insert(s);
+    return true;
+}
+```
+
 ## [494. 目标和](https://leetcode.cn/problems/target-sum/)
 
 > 给你一个非负整数数组 `nums` 和一个整数 `target` 。
