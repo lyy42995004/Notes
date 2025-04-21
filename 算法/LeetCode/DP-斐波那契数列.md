@@ -55,78 +55,135 @@ int minCostClimbingStairs(vector<int>& cost) {
 }
 ```
 
-# 中等
+## [1137. 第 N 个泰波那契数](https://leetcode.cn/problems/n-th-tribonacci-number/)
 
-## [62. 不同路径](https://leetcode.cn/problems/unique-paths/)
-
-> 一个机器人位于一个 `m x n` 网格的左上角 （起始点在下图中标记为 “Start” ）。
+> 泰波那契序列 Tn 定义如下： 
 >
-> 机器人每次只能向下或者向右移动一步。机器人试图达到网格的右下角（在下图中标记为 “Finish” ）。
+> T0 = 0, T1 = 1, T2 = 1, 且在 n >= 0 的条件下 Tn+3 = Tn + Tn+1 + Tn+2
 >
-> 问总共有多少条不同的路径？
+> 给你整数 `n`，请返回第 n 个泰波那契数 Tn 的值。
 >
 >  
 >
 > **示例 1：**
 >
-> ![img](https://pic.leetcode.cn/1697422740-adxmsI-image.png)
->
 > ```
-> 输入：m = 3, n = 7
-> 输出：28
+> 输入：n = 4
+> 输出：4
+> 解释：
+> T_3 = 0 + 1 + 1 = 2
+> T_4 = 1 + 1 + 2 = 4
 > ```
 >
 > **示例 2：**
 >
 > ```
-> 输入：m = 3, n = 2
-> 输出：3
-> 解释：
-> 从左上角开始，总共有 3 条路径可以到达右下角。
-> 1. 向右 -> 向下 -> 向下
-> 2. 向下 -> 向下 -> 向右
-> 3. 向下 -> 向右 -> 向下
-> ```
->
-> **示例 3：**
->
-> ```
-> 输入：m = 7, n = 3
-> 输出：28
-> ```
->
-> **示例 4：**
->
-> ```
-> 输入：m = 3, n = 3
-> 输出：6
+> 输入：n = 25
+> 输出：1389537
 > ```
 >
 >  
 >
 > **提示：**
 >
-> - `1 <= m, n <= 100`
-> - 题目数据保证答案小于等于 `2 * 10^9`
+> - `0 <= n <= 37`
+> - 答案保证是一个 32 位整数，即 `answer <= 2^31 - 1`。
 
 ```cpp
-int uniquePaths(int m, int n) {
-    // 到[i][j]位置的路径数
-    vector<vector<int>> dp(m, vector<int>(n));
-    for (int i = 0; i < m; ++i) {
-        dp[i][0] = 1;
-    }
-    for (int j = 0; j < n; ++j) {
-        dp[0][j] = 1;
-    }
-    for (int i = 1; i < m; ++i) {
-        for (int j = 1; j < n; ++j) {
-            dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-        }
-    }
-    return dp[m - 1][n - 1];
+int tribonacci(int n) 
+{
+    if (n == 0) 
+        return 0;
+    if (n == 1 || n == 2)
+        return 1;
+    vector<int> dp(n + 1);
+    dp[0] = 0, dp[1] = dp[2] = 1;
+    for (int i = 3; i <= n; ++i)
+        dp[i] = dp[i - 1] + dp[i - 2] + dp[i - 3];
+    return dp[n];
 }
 ```
+
+**优化**
+
+```cpp
+int tribonacci(int n) {
+    if (n == 0) {
+        return 0;
+    }
+    if (n == 1 || n == 2) {
+        return 1;
+    }
+    int a = 0, b = 1, c = 1, d;
+    for (int i = 3; i <= n; ++i) {
+        d = a + b + c;
+        a = b, b = c, c = d;
+    }
+    return d;
+}
+```
+
+## [面试题 08.01. 三步问题](https://leetcode.cn/problems/three-steps-problem-lcci/)
+
+> 三步问题。有个小孩正在上楼梯，楼梯有 n 阶台阶，小孩一次可以上 1 阶、2 阶或 3 阶。实现一种方法，计算小孩有多少种上楼梯的方式。结果可能很大，你需要对结果模 1000000007。
+>
+> **示例 1：**
+>
+> ```
+>  输入：n = 3 
+>  输出：4
+>  说明：有四种走法
+> ```
+>
+> **示例 2：**
+>
+> ```
+>  输入：n = 5
+>  输出：13
+> ```
+>
+> **提示:**
+>
+> n 范围在[1, 1000000]之间
+
+```cpp
+    const int MOD = 1000000007;
+
+    int waysToStep(int n) {
+        int sz = max(3, n);
+        vector<int> dp(sz + 1);
+        dp[1] = 1, dp[2] = 2, dp[3] = 4;
+        for (int i = 4; i <= n; ++i) {
+            dp[i] = ((dp[i - 1] + dp[i - 2]) % MOD + dp[i - 3]) % MOD;
+        }
+        return dp[n];
+    }
+```
+
+**优化**
+
+```cpp
+const int MOD = 1000000007;
+
+int waysToStep(int n) {
+    if (n == 1) {
+        return 1;
+    } else if (n == 2) {
+        return 2;
+    } if (n == 3) {
+        return 4;
+    }
+    int a = 1, b = 2, c = 4, d;
+    for (int i = 4; i <= n; ++i) {
+        d = ((a + b) % MOD + c) % MOD;
+        a = b, b = c, c = d;
+    }
+    return d;
+}
+```
+
+# 中等
+
 
 ## [91. 解码方法](https://leetcode.cn/problems/decode-ways/)
 
@@ -218,76 +275,3 @@ int numDecodings(string s) {
     return dp[n - 1];
 }
 ```
-
-## [63. 不同路径 II](https://leetcode.cn/problems/unique-paths-ii/)
-
-> 给定一个 `m x n` 的整数数组 `grid`。一个机器人初始位于 **左上角**（即 `grid[0][0]`）。机器人尝试移动到 **右下角**（即 `grid[m - 1][n - 1]`）。机器人每次只能向下或者向右移动一步。
->
-> 网格中的障碍物和空位置分别用 `1` 和 `0` 来表示。机器人的移动路径中不能包含 **任何** 有障碍物的方格。
->
-> 返回机器人能够到达右下角的不同路径数量。
->
-> 测试用例保证答案小于等于 `2 * 109`。
->
->  
->
-> **示例 1：**
->
-> <img src="https://assets.leetcode.com/uploads/2020/11/04/robot1.jpg" alt="img" style="zoom:50%;" />
->
-> ```
-> 输入：obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
-> 输出：2
-> 解释：3x3 网格的正中间有一个障碍物。
-> 从左上角到右下角一共有 2 条不同的路径：
-> 1. 向右 -> 向右 -> 向下 -> 向下
-> 2. 向下 -> 向下 -> 向右 -> 向右
-> ```
->
-> **示例 2：**
->
-> <img src="https://assets.leetcode.com/uploads/2020/11/04/robot2.jpg" alt="img" style="zoom:50%;" />
->
-> ```
-> 输入：obstacleGrid = [[0,1],[0,0]]
-> 输出：1
-> ```
->
->  
->
-> **提示：**
->
-> - `m == obstacleGrid.length`
-> - `n == obstacleGrid[i].length`
-> - `1 <= m, n <= 100`
-> - `obstacleGrid[i][j]` 为 `0` 或 `1`
-
-```cpp
-int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
-    int m = obstacleGrid.size(), n = obstacleGrid[0].size();
-    // 到[i][j]位置的路径数
-    vector<vector<int>> dp(m, vector<int>(n));
-    for (int i = 0; i < m; ++i) {
-        if (obstacleGrid[i][0] == 1) {
-            break;
-        }
-        dp[i][0] = 1;
-    }
-    for (int j = 0; j < n; ++j) {
-        if (obstacleGrid[0][j] == 1) {
-            break;
-        }
-        dp[0][j] = 1;
-    }
-
-    for (int i = 1; i < m; ++i) {
-        for (int j = 1; j < n; ++j) {
-            if (obstacleGrid[i][j] == 0) {
-                dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-            }
-        }
-    }
-    return dp[m - 1][n - 1];
-}
-```
-
