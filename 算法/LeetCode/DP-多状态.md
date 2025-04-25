@@ -1,4 +1,4 @@
-# 简单
+# 	简单
 
 ## [面试题 17.16. 按摩师](https://leetcode.cn/problems/the-masseuse-lcci/)
 
@@ -101,6 +101,186 @@ int rob(vector<int>& nums) {
     }
 
     return max(dp[n-1][0], dp[n-1][1]);
+}
+```
+
+## [213. 打家劫舍 II](https://leetcode.cn/problems/house-robber-ii/)
+
+> 你是一个专业的小偷，计划偷窃沿街的房屋，每间房内都藏有一定的现金。这个地方所有的房屋都 **围成一圈** ，这意味着第一个房屋和最后一个房屋是紧挨着的。同时，相邻的房屋装有相互连通的防盗系统，**如果两间相邻的房屋在同一晚上被小偷闯入，系统会自动报警** 。
+>
+> 给定一个代表每个房屋存放金额的非负整数数组，计算你 **在不触动警报装置的情况下** ，今晚能够偷窃到的最高金额。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：nums = [2,3,2]
+> 输出：3
+> 解释：你不能先偷窃 1 号房屋（金额 = 2），然后偷窃 3 号房屋（金额 = 2）, 因为他们是相邻的。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：nums = [1,2,3,1]
+> 输出：4
+> 解释：你可以先偷窃 1 号房屋（金额 = 1），然后偷窃 3 号房屋（金额 = 3）。
+>      偷窃到的最高金额 = 1 + 3 = 4 。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：nums = [1,2,3]
+> 输出：3
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= nums.length <= 100`
+> - `0 <= nums[i] <= 1000`
+
+```cpp
+int rob(vector<int>& nums) {
+    int n = nums.size();
+    // 偷第一间房屋，不能偷最后一间房屋
+    int a = nums[0] + robRange(nums, 2, n-1);
+    // 不偷第一间房屋
+    int b = robRange(nums, 1, n);
+    return max(a, b);
+}
+
+// 在[left, right)内偷取房屋的最大金额
+int robRange(vector<int>& nums, int left, int right) {
+    if (left >= right) {
+        return 0;
+    }
+    // dp[i][0]偷盗nums[i]的最高金额
+    // dp[i][1]不偷nums[i]的最高金额
+    vector<vector<int>> dp(right, vector<int>(2));
+    dp[left][0] = nums[left], dp[left][1] = 0;
+
+    for (int i = left + 1; i < right; ++i) {
+        dp[i][0] = dp[i-1][1] + nums[i];
+        dp[i][1] = max(dp[i-1][0], dp[i-1][1]);
+    }
+    return max(dp[right-1][0], dp[right-1][1]);
+}
+```
+
+## [740. 删除并获得点数](https://leetcode.cn/problems/delete-and-earn/)
+
+> 给你一个整数数组 `nums` ，你可以对它进行一些操作。
+>
+> 每次操作中，选择任意一个 `nums[i]` ，删除它并获得 `nums[i]` 的点数。之后，你必须删除 **所有** 等于 `nums[i] - 1` 和 `nums[i] + 1` 的元素。
+>
+> 开始你拥有 `0` 个点数。返回你能通过这些操作获得的最大点数。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：nums = [3,4,2]
+> 输出：6
+> 解释：
+> 删除 4 获得 4 个点数，因此 3 也被删除。
+> 之后，删除 2 获得 2 个点数。总共获得 6 个点数。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：nums = [2,2,3,3,3,4]
+> 输出：9
+> 解释：
+> 删除 3 获得 3 个点数，接着要删除两个 2 和 4 。
+> 之后，再次删除 3 获得 3 个点数，再次删除 3 获得 3 个点数。
+> 总共获得 9 个点数。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= nums.length <= 2 * 10^4`
+> - `1 <= nums[i] <= 10^4`
+
+```cpp
+int deleteAndEarn(vector<int>& nums) {
+    const int N = 1e4 + 5;
+    vector<int> arr(N);
+    for (int i = 0; i < nums.size(); ++i) {
+        arr[nums[i]] += nums[i];
+    }
+
+    // f[i]不选i的最大点数
+    // g[i]  选i的最大点数
+    vector<int> f(N);
+    vector<int> g(N);
+    for (int i = 1; i < N; ++i) {
+        f[i] = max(f[i-1], g[i-1]);
+        g[i] = f[i-1] + arr[i];
+    }
+    return max(f[N-1], g[N-1]);
+}
+```
+
+## [LCR 091. 粉刷房子](https://leetcode.cn/problems/JEj789/)
+
+> 假如有一排房子，共 `n` 个，每个房子可以被粉刷成红色、蓝色或者绿色这三种颜色中的一种，你需要粉刷所有的房子并且使其相邻的两个房子颜色不能相同。
+>
+> 当然，因为市场上不同颜色油漆的价格不同，所以房子粉刷成不同颜色的花费成本也是不同的。每个房子粉刷成不同颜色的花费是以一个 `n x 3` 的正整数矩阵 `costs` 来表示的。
+>
+> 例如，`costs[0][0]` 表示第 0 号房子粉刷成红色的成本花费；`costs[1][2]` 表示第 1 号房子粉刷成绿色的花费，以此类推。
+>
+> 请计算出粉刷完所有房子最少的花费成本。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入: costs = [[17,2,17],[16,16,5],[14,3,19]]
+> 输出: 10
+> 解释: 将 0 号房子粉刷成蓝色，1 号房子粉刷成绿色，2 号房子粉刷成蓝色。
+>      最少花费: 2 + 5 + 3 = 10。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入: costs = [[7,6,2]]
+> 输出: 2
+> ```
+>
+>  
+>
+> **提示:**
+>
+> - `costs.length == n`
+> - `costs[i].length == 3`
+> - `1 <= n <= 100`
+> - `1 <= costs[i][j] <= 20`
+>
+>  
+>
+> 注意：本题与主站 256 题相同：https://leetcode-cn.com/problems/paint-house/
+
+```cpp
+int minCost(vector<vector<int>>& costs) {
+    int n = costs.size();
+    // cost[i-1][0] 粉刷成红色的最少的花费
+    vector<vector<int>> dp(n + 1, vector<int>(3));
+    for (int i = 1; i <= n; ++i) {
+        dp[i][0] = min(dp[i - 1][1], dp[i - 1][2]) + costs[i - 1][0];
+        dp[i][1] = min(dp[i - 1][0], dp[i - 1][2]) + costs[i - 1][1];
+        dp[i][2] = min(dp[i - 1][0], dp[i - 1][1]) + costs[i - 1][2];
+    }
+    return min(min(dp[n][0], dp[n][1]), dp[n][2]);
 }
 ```
 
