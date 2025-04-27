@@ -790,6 +790,47 @@ bool isPalindrome(const string& s) {
 }
 ```
 
+**优化**
+
+```cpp
+vector<vector<string>> ans;
+vector<string> path;
+// i开始j结尾的子串是否回文
+vector<vector<bool>> dp;
+
+vector<vector<string>> partition(string s) {
+    int n = s.size();
+    dp = vector<vector<bool>>(n, vector<bool>(n));
+    for (int i = n - 1; i >= 0; --i) {
+        for (int j = i; j < n; ++j) {
+            if (s[i] == s[j]) {
+                dp[i][j] = j-i+1 > 2 ? dp[i+1][j-1] : true;
+            }
+        }
+    }
+
+    dfs(s, 0);
+    return ans;
+}
+
+void dfs(const string& s, int pos) {
+    if (pos == s.size()) {
+        ans.push_back(path);
+        return;
+    }
+
+    // pos开始，j结尾
+    for (int j = pos; j < s.size(); ++j) {
+        string str = s.substr(pos, j - pos + 1);
+        if (dp[pos][j]) {
+            path.push_back(str);
+            dfs(s, j + 1);
+            path.pop_back();
+        }
+    }
+}
+```
+
 ## [494. 目标和](https://leetcode.cn/problems/target-sum/)
 
 > 给你一个非负整数数组 `nums` 和一个整数 `target` 。
