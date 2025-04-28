@@ -49,6 +49,56 @@ string longestPalindrome(string s) {
 }
 ```
 
+## [516. 最长回文子序列](https://leetcode.cn/problems/longest-palindromic-subsequence/)
+
+> 给你一个字符串 `s` ，找出其中最长的回文子序列，并返回该序列的长度。
+>
+> 子序列定义为：不改变剩余字符顺序的情况下，删除某些字符或者不删除任何字符形成的一个序列。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：s = "bbbab"
+> 输出：4
+> 解释：一个可能的最长回文子序列为 "bbbb" 。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：s = "cbbd"
+> 输出：2
+> 解释：一个可能的最长回文子序列为 "bb" 。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= s.length <= 1000`
+> - `s` 仅由小写英文字母组成
+
+```cpp
+int longestPalindromeSubseq(string s) {
+    int n = s.size();
+    // i开始j结尾的最长回文子序列
+    vector<vector<int>> dp(n, vector<int>(n));
+    for (int i = n - 1; i >= 0; --i) {
+        dp[i][i] = 1;
+        for (int j = i + 1; j < n; ++j) {
+            if (s[i] == s[j]) {
+                dp[i][j] = dp[i+1][j-1] + 2;
+            } else {
+                dp[i][j] = max(dp[i+1][j], dp[i][j-1]);
+            }
+        }
+    }
+    return dp[0][n - 1];
+}
+```
+
 ## [647. 回文子串](https://leetcode.cn/problems/palindromic-substrings/)
 
 > 给你一个字符串 `s` ，请你统计并返回这个字符串中 **回文子串** 的数目。
@@ -244,6 +294,66 @@ int cost(const string& s, int left, int right) {
         left++, right--;
     }
     return ret;
+}
+```
+
+## [1312. 让字符串成为回文串的最少插入次数](https://leetcode.cn/problems/minimum-insertion-steps-to-make-a-string-palindrome/)
+
+>  给你一个字符串 `s` ，每一次操作你都可以在字符串的任意位置插入任意字符。
+>
+> 请你返回让 `s` 成为回文串的 **最少操作次数** 。
+>
+> 「回文串」是正读和反读都相同的字符串。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：s = "zzazz"
+> 输出：0
+> 解释：字符串 "zzazz" 已经是回文串了，所以不需要做任何插入操作。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：s = "mbadm"
+> 输出：2
+> 解释：字符串可变为 "mbdadbm" 或者 "mdbabdm" 。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：s = "leetcode"
+> 输出：5
+> 解释：插入 5 个字符后字符串变为 "leetcodocteel" 。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= s.length <= 500`
+> - `s` 中所有字符都是小写字母。
+
+```cpp
+int minInsertions(string s) {
+    int n = s.size();
+    // i开始j结尾的最少插入次数
+    vector<vector<int>> dp(n, vector<int>(n));
+    for (int i = n - 1; i >= 0; --i) {
+        dp[i][i] = 0;
+        for (int j = i + 1; j < n; ++j) {
+            if (s[i] == s[j]) {
+                dp[i][j] = dp[i+1][j-1];
+            } else {
+                dp[i][j] = min(dp[i+1][j], dp[i][j-1]) + 1;
+            }
+        }
+    }
+    return dp[0][n - 1];
 }
 ```
 
