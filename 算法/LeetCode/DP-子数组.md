@@ -56,6 +56,72 @@ int maxSubArray(vector<int>& nums) {
 }
 ```
 
+## [139. 单词拆分](https://leetcode.cn/problems/word-break/)
+
+> 给你一个字符串 `s` 和一个字符串列表 `wordDict` 作为字典。如果可以利用字典中出现的一个或多个单词拼接出 `s` 则返回 `true`。
+>
+> **注意：**不要求字典中出现的单词全部都使用，并且字典中的单词可以重复使用。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入: s = "leetcode", wordDict = ["leet", "code"]
+> 输出: true
+> 解释: 返回 true 因为 "leetcode" 可以由 "leet" 和 "code" 拼接成。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入: s = "applepenapple", wordDict = ["apple", "pen"]
+> 输出: true
+> 解释: 返回 true 因为 "applepenapple" 可以由 "apple" "pen" "apple" 拼接成。
+>      注意，你可以重复使用字典中的单词。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入: s = "catsandog", wordDict = ["cats", "dog", "sand", "and", "cat"]
+> 输出: false
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= s.length <= 300`
+> - `1 <= wordDict.length <= 1000`
+> - `1 <= wordDict[i].length <= 20`
+> - `s` 和 `wordDict[i]` 仅由小写英文字母组成
+> - `wordDict` 中的所有字符串 **互不相同**
+
+```cpp
+bool wordBreak(string s, vector<string>& wordDict) {
+    unordered_set<string> hash;
+    for (string str : wordDict) {
+        hash.insert(str);
+    }
+
+    int n = s.size();
+    s = " " + s;
+    // i结尾的字符串是否可以拼接出
+    vector<bool> dp(n+1);
+    dp[0] = true;
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= i; ++j) {
+            if (dp[j-1] && hash.count(s.substr(j, i-j+1))) {
+                dp[i] = true;
+                break;
+            }
+        }
+    }
+    return dp[n];
+}
+```
+
 ## [152. 乘积最大子数组](https://leetcode.cn/problems/maximum-product-subarray/)
 
 > 给你一个整数数组 `nums` ，请你找出数组中乘积最大的非空连续 子数组（该子数组中至少包含一个数字），并返回该子数组所对应的乘积。
@@ -100,6 +166,118 @@ int maxProduct(vector<int>& nums) {
         f[i] = max({a, b, c});
         g[i] = min({a, b, c});
         ans = max(ans, f[i]);
+    }
+    return ans;
+}
+```
+
+## [413. 等差数列划分](https://leetcode.cn/problems/arithmetic-slices/)
+
+> 如果一个数列 **至少有三个元素** ，并且任意两个相邻元素之差相同，则称该数列为等差数列。
+>
+> - 例如，`[1,3,5,7,9]`、`[7,7,7,7]` 和 `[3,-1,-5,-9]` 都是等差数列。
+>
+> 给你一个整数数组 `nums` ，返回数组 `nums` 中所有为等差数组的 **子数组** 个数。
+>
+> **子数组** 是数组中的一个连续序列。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：nums = [1,2,3,4]
+> 输出：3
+> 解释：nums 中有三个子等差数组：[1, 2, 3]、[2, 3, 4] 和 [1,2,3,4] 自身。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：nums = [1]
+> 输出：0
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= nums.length <= 5000`
+> - `-1000 <= nums[i] <= 1000`
+
+```cpp
+int numberOfArithmeticSlices(vector<int>& nums) {
+    int n = nums.size();
+    // i结尾等差子数组个数
+    vector<int> dp(n);
+    int ans = 0;
+    for (int i = 2; i < n; ++i) {
+        if (nums[i-2] + nums[i] == 2 * nums[i-1]) {
+            dp[i] = dp[i-1] + 1;
+        }
+        ans += dp[i];
+    }
+    return ans;
+}
+```
+
+## [467. 环绕字符串中唯一的子字符串](https://leetcode.cn/problems/unique-substrings-in-wraparound-string/)
+
+>  定义字符串 `base` 为一个 `"abcdefghijklmnopqrstuvwxyz"` 无限环绕的字符串，所以 `base` 看起来是这样的：
+>
+> - `"...zabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd...."`.
+>
+> 给你一个字符串 `s` ，请你统计并返回 `s` 中有多少 **不同****非空子串** 也在 `base` 中出现。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：s = "a"
+> 输出：1
+> 解释：字符串 s 的子字符串 "a" 在 base 中出现。
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：s = "cac"
+> 输出：2
+> 解释：字符串 s 有两个子字符串 ("a", "c") 在 base 中出现。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：s = "zab"
+> 输出：6
+> 解释：字符串 s 有六个子字符串 ("z", "a", "b", "za", "ab", and "zab") 在 base 中出现。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= s.length <= 10^5`
+> - s 由小写英文字母组成
+
+```cpp
+int findSubstringInWraproundString(string s) {
+    int n = s.size();
+    // i结尾，不同非空子串在 base 中出现的个数
+    vector<int> dp(n, 1);
+    vector<int> hash(26);
+    hash[s[0]-'a'] = 1;
+    for (int i = 1; i < n; ++i) {
+        if ((s[i] == s[i-1] + 1) || (s[i] == 'a' && s[i-1] == 'z')) {
+            dp[i] = dp[i-1] + 1;
+        }
+        hash[s[i]-'a'] = max(hash[s[i]-'a'], dp[i]);
+    }
+    int ans = 0;
+    for (int i : hash) {
+        ans += i;
     }
     return ans;
 }
@@ -166,6 +344,72 @@ int maxSubarraySumCircular(vector<int>& nums) {
         return fmax;
     }
     return max(sum - gmin, fmax);
+}
+```
+
+## [978. 最长湍流子数组](https://leetcode.cn/problems/longest-turbulent-subarray/)
+
+> 给定一个整数数组 `arr` ，返回 `arr` 的 *最大湍流子数组的**长度*** 。
+>
+> 如果比较符号在子数组中的每个相邻元素对之间翻转，则该子数组是 **湍流子数组** 。
+>
+> 更正式地来说，当 `arr` 的子数组 `A[i], A[i+1], ..., A[j]` 满足仅满足下列条件时，我们称其为*湍流子数组*：
+>
+> - 若 `i <= k < j`：
+>   - 当 `k` 为奇数时， `A[k] > A[k+1]`，且
+>   - 当 `k` 为偶数时，`A[k] < A[k+1]`；
+> - 或 若 `i <= k < j`：
+>   - 当 `k` 为偶数时，`A[k] > A[k+1]` ，且
+>   - 当 `k` 为奇数时， `A[k] < A[k+1]`。
+>
+>  
+>
+> **示例 1：**
+>
+> ```
+> 输入：arr = [9,4,2,10,7,8,8,1,9]
+> 输出：5
+> 解释：arr[1] > arr[2] < arr[3] > arr[4] < arr[5]
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：arr = [4,8,12,16]
+> 输出：2
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：arr = [100]
+> 输出：1
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= arr.length <= 4 * 104`
+> - `0 <= arr[i] <= 109`
+
+```cpp
+int maxTurbulenceSize(vector<int>& arr) {
+    int n = arr.size();
+    vector<int> f(n, 1); // i结尾，上升趋势的最大湍流子数组
+    vector<int> g(n, 1); // 下降
+    int ans = 1;
+    for (int i = 1; i < n; ++i) {
+        int a = arr[i - 1], b = arr[i];
+        if (a > b) {
+            g[i] = f[i - 1] + 1;
+        }
+        if (a < b) {
+            f[i] = g[i - 1] + 1;
+        }
+        ans = max({ans, f[i], g[i]});
+    }
+    return ans;
 }
 ```
 

@@ -505,7 +505,7 @@ int maxProfit(vector<int>& prices) {
     int n = prices.size();
     const int N = -0x3f3f3f;
     vector<vector<int>> f(n, vector<int>(3, N)); // 买
-    vector<vector<int>> g(n, vector<int>(3, N));
+    vector<vector<int>> g(n, vector<int>(3, N)); // 卖
     f[0][0] = -prices[0], g[0][0] = 0;
     for (int i = 1; i < n; ++i) {
         for (int j = 0; j <= 2; ++j) {
@@ -530,14 +530,13 @@ int maxProfit(vector<int>& prices) {
 int maxProfit(vector<int>& prices) {
     int n = prices.size();
     const int N = -0x3f3f3f;
-    int f0 = -prices[0], f1 = N, f2 = N; // f 买
-    int g0 = 0, g1 = N, g2 = N;          // g 不买
+    int f1 = -prices[0], f2 = N; // f 买了
+    int g0 = 0, g1 = N, g2 = N;  // g 卖了
     for (int i = 1; i < n; ++i) {
-        f0 = max(f0, g0 - prices[i]);
-        f1 = max(f1, g1 - prices[i]);
-        f2 = max(f2, g2 - prices[i]);
-        g1 = max(g1, f0 + prices[i]);
-        g2 = max(g2, f1 + prices[i]);
+        f1 = max(f1, g0 - prices[i]);
+        f2 = max(f2, g1 - prices[i]);
+        g1 = max(g1, f1 + prices[i]);
+        g2 = max(g2, f2 + prices[i]);
     }
     return max({g0, g1, g2});
 }
@@ -583,14 +582,14 @@ int maxProfit(int k, vector<int>& prices) {
     int n = prices.size();
     const int N = -0x3f3f3f;
     k = min(k, n / 2);
-    vector<vector<int>> f(n, vector<int>(k + 1, N)); // 买
-    vector<vector<int>> g(n, vector<int>(k + 1, N));
+    vector<vector<int>> f(n, vector<int>(k + 1, N)); // 买(i+1)个
+    vector<vector<int>> g(n, vector<int>(k + 1, N)); // 卖j个
     f[0][0] = -prices[0], g[0][0] = 0;
     for (int i = 1; i < n; ++i) {
         for (int j = 0; j <= k; ++j) {
-            // f[i][j] 买了j个
+            // f[i][j] 买了j+1个
             f[i][j] = max(f[i - 1][j], g[i - 1][j] - prices[i]);
-            // g[i][j] 该买第j个
+            // g[i][j] 卖了j个
             g[i][j] = g[i - 1][j];
             if (j - 1 >= 0) {
                 g[i][j] = max(g[i][j], f[i - 1][j - 1] + prices[i]);
