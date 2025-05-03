@@ -152,7 +152,7 @@ private:
 };
 ```
 
-## MyWeakPtr
+## weak_ptr
 
 ```cpp
 template <class T>
