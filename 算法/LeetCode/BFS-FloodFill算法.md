@@ -343,6 +343,96 @@ int maxAreaOfIsland(vector<vector<int>>& grid) {
 }
 ```
 
+## [994. 腐烂的橘子](https://leetcode.cn/problems/rotting-oranges/)
+
+> 在给定的 `m x n` 网格 `grid` 中，每个单元格可以有以下三个值之一：
+>
+> - 值 `0` 代表空单元格；
+> - 值 `1` 代表新鲜橘子；
+> - 值 `2` 代表腐烂的橘子。
+>
+> 每分钟，腐烂的橘子 **周围 4 个方向上相邻** 的新鲜橘子都会腐烂。
+>
+> 返回 *直到单元格中没有新鲜橘子为止所必须经过的最小分钟数。如果不可能，返回 `-1`* 。
+>
+>  
+>
+> **示例 1：**
+>
+> **![img](https://assets.leetcode-cn.com/aliyun-lc-upload/uploads/2019/02/16/oranges.png)**
+>
+> ```
+> 输入：grid = [[2,1,1],[1,1,0],[0,1,1]]
+> 输出：4
+> ```
+>
+> **示例 2：**
+>
+> ```
+> 输入：grid = [[2,1,1],[0,1,1],[1,0,1]]
+> 输出：-1
+> 解释：左下角的橘子（第 2 行， 第 0 列）永远不会腐烂，因为腐烂只会发生在 4 个方向上。
+> ```
+>
+> **示例 3：**
+>
+> ```
+> 输入：grid = [[0,2]]
+> 输出：0
+> 解释：因为 0 分钟时已经没有新鲜橘子了，所以答案就是 0 。
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `m == grid.length`
+> - `n == grid[i].length`
+> - `1 <= m, n <= 10`
+> - `grid[i][j]` 仅为 `0`、`1` 或 `2`
+
+```cpp
+const int dx[4] = {1, -1, 0, 0};
+const int dy[4] = {0, 0, 1, -1};  
+
+int orangesRotting(vector<vector<int>>& grid) {
+    int m = grid.size(), n = grid[0].size();
+    int cnt = 0; // 新鲜橘子个数
+    queue<pair<int, int>> que;
+    for (int i = 0; i < m; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (grid[i][j] == 2) {
+                que.emplace(i, j);
+            } else if (grid[i][j] == 1) {
+                cnt++;
+            }
+        }
+    }
+    if (cnt == 0) {
+        return 0;
+    }
+
+    int ans = 0;
+    while (!que.empty()) {
+        ans++;
+        int size = que.size();
+        for (int i = 0; i < size; ++i) {
+            auto [x, y] = que.front(); 
+            que.pop();
+            for (int k = 0; k < 4; ++k) {
+                int nx = x + dx[k], ny = y + dy[k];
+                if (nx >= 0 && nx < m && ny >= 0 && ny < n && grid[nx][ny] == 1) {
+                    grid[nx][ny] = 2;
+                    que.emplace(nx, ny);
+                    cnt--;
+                }
+            }
+        }
+    }
+    return cnt == 0 ? ans-1 : -1;
+}
+```
+
 ## [1020. 飞地的数量](https://leetcode.cn/problems/number-of-enclaves/)
 
 > 给你一个大小为 `m x n` 的二进制矩阵 `grid` ，其中 `0` 表示一个海洋单元格、`1` 表示一个陆地单元格。
@@ -432,5 +522,88 @@ int numEnclaves(vector<vector<int>>& grid) {
     }
     return ans; 
 }
+```
+
+# [208. 实现 Trie (前缀树)](https://leetcode.cn/problems/implement-trie-prefix-tree/)
+
+> **[Trie](https://baike.baidu.com/item/字典树/9825209?fr=aladdin)**（发音类似 "try"）或者说 **前缀树** 是一种树形数据结构，用于高效地存储和检索字符串数据集中的键。这一数据结构有相当多的应用情景，例如自动补全和拼写检查。
+>
+> 请你实现 Trie 类：
+>
+> - `Trie()` 初始化前缀树对象。
+> - `void insert(String word)` 向前缀树中插入字符串 `word` 。
+> - `boolean search(String word)` 如果字符串 `word` 在前缀树中，返回 `true`（即，在检索之前已经插入）；否则，返回 `false` 。
+> - `boolean startsWith(String prefix)` 如果之前已经插入的字符串 `word` 的前缀之一为 `prefix` ，返回 `true` ；否则，返回 `false` 。
+>
+>  
+>
+> **示例：**
+>
+> ```
+> 输入
+> ["Trie", "insert", "search", "search", "startsWith", "insert", "search"]
+> [[], ["apple"], ["apple"], ["app"], ["app"], ["app"], ["app"]]
+> 输出
+> [null, null, true, false, true, null, true]
+> 
+> 解释
+> Trie trie = new Trie();
+> trie.insert("apple");
+> trie.search("apple");   // 返回 True
+> trie.search("app");     // 返回 False
+> trie.startsWith("app"); // 返回 True
+> trie.insert("app");
+> trie.search("app");     // 返回 True
+> ```
+>
+>  
+>
+> **提示：**
+>
+> - `1 <= word.length, prefix.length <= 2000`
+> - `word` 和 `prefix` 仅由小写英文字母组成
+> - `insert`、`search` 和 `startsWith` 调用次数 **总计** 不超过 `3 * 10^4` 次
+
+```cpp
+class Trie {
+public:
+    Trie() : children(26), isEnd(false) {}
+    
+    void insert(string word) {
+        Trie* node = this;
+        for (char ch : word) {
+            ch -= 'a';
+            if (node->children[ch] == nullptr) {
+                node->children[ch] = new Trie();
+            }
+            node = node->children[ch];
+        }
+        node->isEnd = true;
+    }
+    
+    bool search(string word) {
+        Trie* node = searchPrefix(word);
+        return node != nullptr && node->isEnd;
+    }
+    
+    bool startsWith(string prefix) {
+        return searchPrefix(prefix) != nullptr;
+    }
+private:
+    vector<Trie*> children;
+    bool isEnd;
+
+    Trie* searchPrefix(string prefix) {
+        Trie* node = this;
+        for (char ch : prefix) {
+            ch -= 'a';
+            if (node->children[ch] == nullptr) {
+                return nullptr;
+            }
+            node = node->children[ch];
+        }
+        return node;
+    }
+};
 ```
 
