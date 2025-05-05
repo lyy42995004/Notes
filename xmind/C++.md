@@ -34,6 +34,55 @@ int strcmp(const char* str1, const char* str2) {
 }
 ```
 
+# 堆
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// 向下调整，维护大根堆
+void adjustDown(vector<int>& nums, int parent) {
+    int n = nums.size();
+    int child = 2*parent + 1;
+    while (child < n) {
+        // 找出大的，进行交换
+        if (child + 1 < n && nums[child+1] > nums[child]) {
+            child = child + 1;
+        }
+
+        if (nums[parent] < nums[child]) {
+            swap(nums[parent], nums[child]);
+            parent = child;
+            child = 2*parent + 1;
+        } else {
+            break;
+        }
+    }
+}
+
+// 构建大根堆
+void buildHeap(vector<int>& nums) {
+    int n = nums.size();
+    // 从最后一个非叶子结点开始调整
+    for (int i = n/2 - 1; i >= 0; --i) {
+        adjustDown(nums, i);
+    }
+}
+
+int main() {
+    vector<int> nums = {3, 5, 1, 2, 4, 6};
+    buildHeap(nums);
+
+    cout << "建堆后的结果：" << endl;
+    for (int num : nums)
+        cout << num << " ";
+    cout << endl;
+
+    return 0;
+}
+```
+
 # 智能指针
 
 ## auto_ptr
@@ -176,3 +225,313 @@ private:
 };
 ```
 
+# LRU 缓存
+
+```cpp
+#include <unordered_map>
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int key, value;
+    Node* next, *prev;
+    Node() : key(0), value(0), next(nullptr), prev(nullptr) {}
+    Node(int key_, int value_)
+    : key(key_), value(value_),  next(nullptr), prev(nullptr) {}
+};
+
+class LRUCache {
+public:
+    LRUCache(int capacity) : size_(0), capacity_(capacity) {
+        head_ = new Node();
+        tail_ = new Node();
+        head_->next = tail_;
+        tail_->prev = head_;
+    }
+
+    ~LRUCache() {
+        Node* cur = head_;
+        while (cur) {
+            Node* next = cur->next;
+            delete cur;
+            cur = next;
+        }
+    }
+    
+    int get(int key) {
+        if (!hash_.count(key)) {
+            return -1;
+        }
+        Node* node = hash_[key];
+        moveToHead(node);
+        return node->value;
+    }
+    
+    void put(int key, int value) {
+        if (hash_.count(key)) {
+            Node* node = hash_[key];
+            node->value = value;
+            moveToHead(node);
+        } else {
+            size_++;
+            Node* node = new Node(key, value);
+            hash_[key] = node;
+            addToHead(node);
+            if (size_ > capacity_) {
+                Node* tail = removeTail();
+                hash_.erase(tail->key);
+                delete tail;
+                size_--;
+            }
+        }
+    }
+
+private:
+    void removeNode(Node* node) {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+
+    void addToHead(Node* node) {
+        Node* head = head_->next;
+        head_->next = node;
+        node->prev = head_;
+        node->next = head;
+        head->prev = node;
+    }
+
+    void moveToHead(Node* node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    Node* removeTail() {
+        Node* tail = tail_->prev;
+        removeNode(tail);
+        return tail;
+    }
+
+private:
+    Node* head_, *tail_;
+    unordered_map<int, Node*> hash_;
+    int size_, capacity_;
+};
+
+int main() {
+    LRUCache* lrucache = new LRUCache(2);
+
+    // 1 -1 -1 3 4
+    lrucache->put(1, 1);                // 缓存是 {1=1}
+    lrucache->put(2, 2);                // 缓存是 {1=1, 2=2}
+    cout << lrucache->get(1) << " ";    // 返回 1
+    lrucache->put(3, 3);                // 该操作会使得关键字 2 作废，缓存是 {1=1, 3=3}
+    cout << lrucache->get(2) << " ";    // 返回 -1 (未找到)
+    lrucache->put(4, 4);                // 该操作会使得关键字 1 作废，缓存是 {4=4, 3=3}
+    cout << lrucache->get(1) << " ";    // 返回 -1 (未找到)
+    cout << lrucache->get(3) << " ";    // 返回 3
+    cout << lrucache->get(4) << " ";    // 返回 4
+    cout << endl;
+
+    return 0;
+}
+```
+
+# 单例模式
+
+## 饿汉
+
+```cpp
+class Singleton {
+public:
+    static Singleton& getInstance() {
+        return instance;
+    }
+
+private:
+    Singleton() {}
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+
+    static Singleton instance;
+};
+
+Singleton Singleton::instance;
+```
+
+## 懒汉
+
+```cpp
+#include <mutex>
+
+class Singleton {
+public:
+    static Singleton* getInstance() {
+        if (instance == nullptr) {                 // 第一次判空
+            std::lock_guard<std::mutex> lock(mtx);
+            if (instance == nullptr) {             // 第二次判空
+                instance = new Singleton();
+            }
+        }
+        return instance;
+    }
+    
+    // static Singleton* getInstance() {
+    //     // C++11 保证局部静态变量初始化线程安全
+    //     static Singleton instance;
+    //     return &instance;
+    // }
+
+private:
+    Singleton() {}
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+    
+    static Singleton* instance;
+    static std::mutex mtx;
+};
+
+Singleton* Singleton::instance = nullptr;
+std::mutex Singleton::mtx;
+```
+
+# 线程池
+
+```cpp
+#include <cassert>
+#include <queue>
+#include <memory>
+#include <functional>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+class ThreadPool {
+public:
+    ThreadPool() = default;
+    ThreadPool(ThreadPool&&) = default;
+    
+    explicit ThreadPool(int thread_count = 8) : pool_(std::make_shared<Pool>()) {
+        assert(thread_count > 0);
+        for (int i = 0; i < thread_count; ++i) {
+            std::thread([this]() {
+                std::unique_lock<std::mutex> locker(pool_->mtx_);
+                while (true) {
+                    if (!pool_->tasks_.empty()) {   // 有任务，取任务执行
+                        auto task = std::move(pool_->tasks_.front());
+                        pool_->tasks_.pop();
+                        locker.unlock();
+                        task();
+                        locker.lock();
+                    } else if (!pool_->is_closed_) { // 未关闭，等待
+                        pool_->cond_.wait(locker);
+                    } else {                         // 已关闭，退出 
+                        break;
+                    }
+                }
+            }).detach();
+        }
+    }
+
+    ~ThreadPool() {
+        if (pool_) {
+            std::lock_guard<std::mutex> locker(pool_->mtx_);
+            pool_->is_closed_ = true;
+        }
+        pool_->cond_.notify_all();
+    }
+
+    template<class T>
+    void AddTask(T&& task) {
+        std::lock_guard<std::mutex> locker(pool_->mtx_);
+        pool_->tasks_.push(std::forward<T>(task));
+        pool_->cond_.notify_one();
+    }
+
+private:
+    struct Pool {
+        bool is_closed_;
+        std::mutex mtx_;
+        std::condition_variable cond_;
+        std::queue<std::function<void()>> tasks_; // 任务队列
+    };
+    std::shared_ptr<Pool> pool_; 
+};
+```
+
+# 多线程打印abc
+
+## 有锁
+
+**mutex + condition_variable**
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+using namespace std;
+
+mutex mtx;
+condition_variable cv;
+int turn = 0; // 0: a, 1: b, 2: c
+
+void printChar(char ch, int myTurn, int n) {
+    for (int i = 0; i < n; ++i) {
+        unique_lock<mutex> lock(mtx);
+        cv.wait(lock, [&] { return turn == myTurn; });
+        cout << ch;
+        turn = (turn + 1) % 3;
+        cv.notify_all();
+    }
+}
+
+int main() {
+    int n = 10;
+    thread t1(printChar,'a', 0, n);
+    thread t2(printChar,'b', 1, n);
+    thread t3(printChar,'c', 2, n);
+    t1.join();
+    t2.join();
+    t3.join();
+    cout << endl;
+
+    return 0;
+}
+```
+
+## 无锁
+
+**atomic + 自旋**
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <atomic>
+using namespace std;
+
+atomic<int> turn(0); // 0: a, 1: b, 2: c
+
+void printChar(char ch, int myTurn, int n) {
+    while(n--) {
+        while (turn.load() != myTurn) {
+            // 自旋等待
+            this_thread::yield();
+        }
+        cout << ch;
+        turn = (turn + 1) % 3;
+    }
+}
+
+int main() {
+    int n = 10;
+    thread t1(printChar,'a', 0, n);
+    thread t2(printChar,'b', 1, n);
+    thread t3(printChar,'c', 2, n);
+    t1.join();
+    t2.join();
+    t3.join();
+	cout << endl;
+    
+    return 0;
+}
+```
