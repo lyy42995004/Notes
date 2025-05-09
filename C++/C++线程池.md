@@ -192,23 +192,9 @@ private:
 
 >  这是我在学习线程池时，在GitHub上搜索发现的一个高star的线程池库，下面我来简单讲解一下，这个库在`addTask()`上的升级，[A simple C++11 Thread Pool implementation](https://github.com/progschj/ThreadPool/blob/master/ThreadPool.h)。
 
-## 原来的 `addTask()`
+**原来的 `addTask()`**：只能接收一个 `std::function<void()>` 形式的可调用对象，加入任务队列并唤醒一个工作线程去执行。
 
-**功能**：
-
-- 接收一个 `std::function<void()>` 形式的可调用对象
-- 加入任务队列
-- 唤醒一个工作线程去执行
-
- **限制**：
-
-- 只能加入无返回值、无参数的任务（`std::function<void()>`）
-- 不能异步获取任务的执行结果（没有 `future`）
-- 没有任务参数的转发和封装功能（比如带参数、lambda 带捕获、右值引用参数都不太方便）
-
-##  `addTask`（高级版）
-
- **功能**：
+**`addTask`（高级版）**：
 
 -  **支持任意返回值的任务**
 -  **支持传递任意参数**（可变模板 + 完美转发）
@@ -241,79 +227,61 @@ auto addTask(F&& f, Args&&... args)
 }
 ```
 
-> ### `template<class F, class... Args>`
->
-> **可变模板参数（Variadic Templates）**
->
-> - `F` 表示一个可调用对象类型（比如函数、lambda、函数对象等）
-> - `Args...` 表示可变数量的参数类型，配合 `args...` 代表具体参数。
-> - 可变模板参数在 C++11 引入，允许一个模板接受任意数量和类型的模板参数。
->
-> ------
->
-> ###  `auto addTask(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type>`
->
->  **返回类型后置（Trailing Return Type）+ 类型萃取**
->
-> - `auto ... -> xxx` 是 C++11 的后置返回类型声明方式，方便当返回值依赖于模板参数时先写参数，再推导返回值。
-> - `std::result_of<F(Args...)>::type` 作用是：
->   - 推导出 `f` 这个可调用对象用 `args...` 调用后的返回值类型。
->   - 比如 `int f(double, string)`，那么 `std::result_of<decltype(f)(double, string)>::type` 就是 `int`。
-> - **警告**：`std::result_of` 在 C++17 起被弃用，推荐用 `std::invoke_result`。
->
-> ------
->
-> ###  `using return_type = typename std::result_of<F(Args...)>::type;`
->
-> **类型别名（Type Alias）**
->
-> - 这里给 `std::result_of<F(Args...)>::type` 起了个别名叫 `return_type`，方便后续多处用。
->
-> ------
->
-> ###  `std::make_shared<std::packaged_task<return_type()>>(...)`
->
-> **智能指针 + packaged_task**
->
-> - `std::packaged_task<return_type()>`：
->   - 包装一个可调用对象（比如函数、lambda）
->   - 执行后可以获取执行结果，和 `std::future` 联动。
-> - `std::make_shared`：
->   - 智能指针，创建对象同时管理其生命周期，避免裸指针泄漏。
->   - `std::make_shared` 比 `new` 更高效、安全。
->
-> ------
->
-> ### `std::bind(std::forward<F>(f), std::forward<Args>(args)...)`
->
->  **`std::bind` 和 完美转发（Perfect Forwarding）**
->
-> - `std::bind`：
->   - 将一个函数或可调用对象和其参数绑定，生成一个可调用对象，稍后执行。
-> - `std::forward`：
->   - 保持参数的左值/右值属性，避免不必要的拷贝。
->   - 这是完美转发的核心，避免右值被当作左值引用传递。
->
-> ------
->
-> ### `std::future<return_type> res = task->get_future();`
->
->  **future/promise机制**
->
-> - `packaged_task` 内部关联了 `std::promise`
-> - `get_future()` 可以拿到与这个 task 绑定的 `future` 对象，执行 `task()` 后，`future.get()` 就能取到执行结果。
->
-> ------
->
-> ### `tasks_.emplace([task](){ (*task)(); });`
->
->  **Lambda捕获 + emplace**
->
-> - `emplace`：
->   - 直接在队列尾部原地构造对象，效率高于 `push`。
-> - `[task]() { (*task)(); }`：
->   - 捕获 `task` 智能指针，生成一个无参 lambda
->   - 执行 lambda 就等于执行 `task()`，触发真正的调用。
+## 可变的模板参数
+
+`template<class F, class... Args>`
+
+- `F` 可以表示一个可调用对象类型（比如函数、lambda、函数对象等）
+- `class... Args`在C++11引入，允许一个模板接受任意数量、任意类型的参数，配合`Args&&... args`的`args`代表具体参数。
+
+## 返回类型后置 + 类型萃取
+
+`auto`和` -> std::future<typename std::result_of<F(Args...)>::type>`
+
+- `auto ... -> xxx` 是 C++11 的后置返回类型声明方式，方便当返回值依赖于模板参数时先写参数，再推导返回值。
+- `std::result_of<F(Args...)>::type` 作用是推导出 `f` 这个可调用对象用 `args...` 调用后的返回值类型。比如 `int f(double, string)`，那么 `std::result_of<decltype(f)(double, string)>::type` 就是 `int`。
+
+**警告**：`std::result_of` 在 C++17 起被弃用，推荐使用`std::invoke_result_t<F, Args...>`简化写法。
+
+##  **future/promise机制**
+
+`std::future<return_type> res = task->get_future();`
+
+- `std::future` 是一个**模板类**（`template<typename T>`），用于表示一个异步操作的**未来结果**。功能：
+
+  - **延迟获取结果**：在异步操作完成后获取返回值。
+  - **检查状态**：判断异步操作是否完成。
+  - **等待结果**：阻塞当前线程直到结果就绪。
+
+  `std::future` 通常与以下组件配合使用：
+
+  - **`std::promise`**：存储结果，与 `future` 关联。
+  - **`std::packaged_task`**：封装可调用对象，自动关联 `future`。
+  - **`std::async`**：高层接口，直接创建异步任务并返回 `future`。
+
+- `get_future()` 可以拿到与这个 task 绑定的 `future` 对象，执行 `task()` 后，`future.get()` 就能取到执行结果。
+
+## **智能指针 + packaged_task**
+
+`std::make_shared<std::packaged_task<return_type()>>(...)`
+
+- `std::make_shared`：智能指针，创建对象同时管理其生命周期，避免裸指针泄漏，`std::make_shared` 比 `new` 更高效、安全。
+
+- `std::packaged_task<return_type()>`：包装一个可调用对象（比如函数、lambda），执行后可以获取执行结果，和 `std::future` 联动。
+
+##  `std::bind` 和 完美转发（Perfect Forwarding）
+
+`std::bind(std::forward<F>(f), std::forward<Args>(args)...)`
+
+- `std::bind`：将一个函数或可调用对象和其参数绑定，生成一个可调用对象，稍后执行。
+- `std::forward`：保持参数的左值/右值属性，避免不必要的拷贝，这是完美转发的核心，避免右值被当作左值引用传递。
+
+## **Lambda捕获 + emplace**
+
+`tasks_.emplace([task](){ (*task)(); });`
+
+- `emplace`：直接在队列尾部原地构造对象，效率高于 `push`。
+- `[task]() { (*task)(); }`：捕获 `task` 智能指针，生成一个无参 lambda，执行 lambda 就等于执行 `task()`，触发真正的调用。
 
 # 使用
 
