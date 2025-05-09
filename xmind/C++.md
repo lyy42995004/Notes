@@ -397,64 +397,67 @@ std::mutex Singleton::mtx;
 # 线程池
 
 ```cpp
-#include <cassert>
-#include <queue>
-#include <memory>
-#include <functional>
+#pragma once
+#include <iostream>
 #include <thread>
+#include <vector>
+#include <functional>
+#include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 class ThreadPool {
 public:
-    ThreadPool() = default;
-    ThreadPool(ThreadPool&&) = default;
-    
-    explicit ThreadPool(int thread_count = 8) : pool_(std::make_shared<Pool>()) {
-        assert(thread_count > 0);
-        for (int i = 0; i < thread_count; ++i) {
-            std::thread([this]() {
-                std::unique_lock<std::mutex> locker(pool_->mtx_);
+    explicit ThreadPool(size_t thread_count) : stop_(false) {
+        for (size_t i = 0; i < thread_count; ++i) {
+            workers_.emplace_back([this] {
                 while (true) {
-                    if (!pool_->tasks_.empty()) {   // 有任务，取任务执行
-                        auto task = std::move(pool_->tasks_.front());
-                        pool_->tasks_.pop();
-                        locker.unlock();
-                        task();
-                        locker.lock();
-                    } else if (!pool_->is_closed_) { // 未关闭，等待
-                        pool_->cond_.wait(locker);
-                    } else {                         // 已关闭，退出 
-                        break;
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(mtx_);
+                        cond_.wait(lock, [this] {
+                            return stop_ || !tasks_.empty();
+                        });
+
+                        if (stop_ && tasks_.empty()) {
+                            return;
+                        }
+
+                        task = std::move(tasks_.front());
+                        tasks_.pop();
                     }
+                    task();  // 执行任务
                 }
-            }).detach();
+            });
         }
     }
 
     ~ThreadPool() {
-        if (pool_) {
-            std::lock_guard<std::mutex> locker(pool_->mtx_);
-            pool_->is_closed_ = true;
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            stop_ = true;
         }
-        pool_->cond_.notify_all();
+        cond_.notify_all();  // 唤醒所有线程
+        for (std::thread &worker : workers_) {
+            worker.join();  // 等待线程结束
+        }
     }
 
-    template<class T>
-    void AddTask(T&& task) {
-        std::lock_guard<std::mutex> locker(pool_->mtx_);
-        pool_->tasks_.push(std::forward<T>(task));
-        pool_->cond_.notify_one();
+    void addTask(const std::function<void()>& task) {
+        {
+            std::lock_guard<std::mutex> lock(mtx_);
+            tasks_.push(task);
+        }
+        cond_.notify_one();  // 唤醒一个线程
     }
 
 private:
-    struct Pool {
-        bool is_closed_;
-        std::mutex mtx_;
-        std::condition_variable cond_;
-        std::queue<std::function<void()>> tasks_; // 任务队列
-    };
-    std::shared_ptr<Pool> pool_; 
+    std::vector<std::thread> workers_;
+    std::queue<std::function<void()>> tasks_;
+    std::mutex mtx_;
+    std::condition_variable cond_;
+    std::atomic<bool> stop_;
 };
 ```
 
