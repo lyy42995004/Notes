@@ -106,11 +106,145 @@ int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 
 **返回值**：成功时，返回已为就绪的 I/O 文件描述符数量；如果在请求的*超时*毫秒数内没有文件描述符就绪，则返回0；错误时，返回 -1，并设置 errno。
 
-# epoll 的工作原理
+# 核心数据结构
 
- **内核维护一个红黑树**（RB-Tree）保存所有监听的 FD
- 发生事件的 FD 会加入到一个**就绪队列**（Ready List）
- `epoll_wait` 直接从 Ready List 拿活跃事件，避免轮询所有 FD
+## eventpoll
+
+**eventpoll 就是 epoll 的控制中心**，红黑树管着监听 fd，rdllist 是触发事件队列，wq 是 epoll_wait 阻塞队列，poll_wait 给 file->poll 用，锁保护多核并发。事件触发靠回调，回调唤醒 epoll_wait，事件放到 rdllist。
+
+```cpp
+/*
+ * This structure is stored inside the "private_data" member of the file
+ * structure and represents the main data structure for the eventpoll
+ * interface.
+ */
+struct eventpoll {
+    /*
+     * This mutex is used to ensure that files are not removed
+     * while epoll is using them. This is held during the event
+     * collection loop, the file cleanup path, the epoll file exit
+     * code and the ctl operations.
+     */
+    struct mutex mtx;
+
+    /* Wait queue used by sys_epoll_wait() */
+    wait_queue_head_t wq;
+
+    /* Wait queue used by file->poll() */
+    wait_queue_head_t poll_wait;
+
+    /* List of ready file descriptors */
+    struct list_head rdllist;
+
+    /* Lock which protects rdllist and ovflist */
+    rwlock_t lock;
+
+    /* RB tree root used to store monitored fd structs */
+    struct rb_root_cached rbr;
+
+    /*
+     * This is a single linked list that chains all the "struct epitem" that
+     * happened while transferring ready events to userspace w/out
+     * holding ->lock.
+     */
+    struct epitem *ovflist;
+
+    /* wakeup_source used when ep_scan_ready_list is running */
+    struct wakeup_source *ws;
+
+    /* The user that created the eventpoll descriptor */
+    struct user_struct *user;
+
+    struct file *file;
+
+    /* used to optimize loop detection check */
+    int visited;
+    struct list_head visited_list_link;
+
+#ifdef CONFIG_NET_RX_BUSY_POLL
+    /* used to track busy poll napi_id */
+    unsigned int napi_id;
+#endif
+};
+```
+
+|   成员    | 描述                                                         |
+| :-------: | :----------------------------------------------------------- |
+|    mtx    | 全局互斥锁，保证在**事件收集、关闭 fd、epoll_ctl 操作**时对 epoll 的一致性。 |
+|    wq     | **epoll_wait 阻塞队列**，当没有事件时，调用 `epoll_wait` 的进程挂在这里。 |
+| poll_wait | 给 `file->poll()` 用的等待队列，内核中 poll 实现底层回调时用到。 |
+|  rdllist  | **就绪事件链表**，当 fd 触发了事件，内核会把对应 `epitem` 放到这里，供 `epoll_wait` 返回给用户。 |
+|  ovflist  | 单链表，当 rdllist 被锁定遍历，向用户空间发送数据时，rdllist 不允许被修改，新触发的就绪 epitem 被 ovflist 串联起来，等待 rdllist 被处理完了，重新将 ovflist 数据写入 rdllist。 详看 ep_scan_ready_list 逻辑。 |
+|   user    | 拥有这个 epoll 的用户，做内核权限检查、资源限制等用途。      |
+|   lock    | 锁，保护 rdllist 和 ovflist 。                               |
+|    rbr    | **红黑树根节点**，用来管理所有注册到 epoll 的 fd（`epitem`）。 |
+|   file    | eventpoll 对应的文件结构，Linux 一切皆文件，用 vfs 管理数据。 |
+|  napi_id  | 应用于中断缓解技术。                                         |
+
+## epitem
+
+**epitem** 是 epoll 里**管理单个 fd 事件状态**的核心单元，红黑树挂 rbn，就绪事件挂 rdllist，等待队列挂 pwqlist，拷贝用户关心事件在 `event` 里，容器指针 ep，fd 信息 ffd，控制能高效组织+高效唤醒。
+
+```cpp
+/*
+ * Each file descriptor added to the eventpoll interface will
+ * have an entry of this type linked to the "rbr" RB tree.
+ * Avoid increasing the size of this struct, there can be many thousands
+ * of these on a server and we do not want this to take another cache line.
+ */
+struct epitem {
+    union {
+        /* RB tree node links this structure to the eventpoll RB tree */
+        struct rb_node rbn;
+        /* Used to free the struct epitem */
+        struct rcu_head rcu;
+    };
+
+    /* List header used to link this structure to the eventpoll ready list */
+    struct list_head rdllink;
+
+    /*
+     * Works together "struct eventpoll"->ovflist in keeping the
+     * single linked chain of items.
+     */
+    struct epitem *next;
+
+    /* The file descriptor information this item refers to */
+    struct epoll_filefd ffd;
+
+    /* Number of active wait queue attached to poll operations */
+    int nwait;
+
+    /* List containing poll wait queues */
+    struct list_head pwqlist;
+
+    /* The "container" of this item */
+    struct eventpoll *ep;
+
+    /* List header used to link this item to the "struct file" items list */
+    struct list_head fllink;
+
+    /* wakeup_source used when EPOLLWAKEUP is set */
+    struct wakeup_source __rcu *ws;
+
+    /* The structure that describe the interested events and the source fd */
+    struct epoll_event event;
+};
+```
+
+|  成员   | 描述                                                         |
+| :-----: | :----------------------------------------------------------- |
+|   rbn   | 挂在 `eventpoll->rbr` 红黑树上。                             |
+|   rcu   | 当需要释放 epitem 时用 RCU 延迟删除。                        |
+| rdllink | 链接到 `eventpoll->rdllist`，表示**就绪事件**。当 fd 有事件触发，内核就把它放到 `rdllist` 里。 |
+|  next   | 用来维护 `eventpoll->ovflist` 单向链表的 next 指针，避免拷贝事件到用户空间时遗漏新的事件。 |
+|   ffd   | 记录节点对应的 fd 和 file 文件信息。                         |
+|  nwait  | 等待队列个数。                                               |
+| pwqlist | 等待事件回调队列。当数据进入网卡，底层中断执行 ep_poll_callback。 |
+|   ep    | eventpoll 指针，epitem 关联 eventpoll。                      |
+| fllink  | epoll 文件链表结点，与 epoll 文件链表进行关联 file.f_ep_links。参考 fs.h, struct file 结构。 |
+|   ws    | EPOLLWAKEUP 模式下使用。                                     |
+|  event  | 用户关注的事件。                                             |
 
 # epoll 的网络服务器流程图
 
@@ -211,12 +345,6 @@ if (client_fd 有 EPOLLOUT 事件) {
 ![image.png](https://s2.loli.net/2025/05/10/3gBCqtFOuU9epR7.png)
 
 这是一张 Linux 5.0.1 内核下基于 epoll 的网络编程及 TCP 连接建立相关的流程图，涵盖了从客户端连接请求到服务器端处理的多个环节，下面我简单介绍一下流程：
-
-## epoll 内核数据结构
-
-- `eventpoll` ：epoll 实例对象
-- `epitem` ：每个监听 fd 对应的 epoll 项
-- `epoll_entry`  ：每个 epoll 事件挂到 `wait_queue_head` 里的队列节点
 
 ## ① `epoll_create`
 
