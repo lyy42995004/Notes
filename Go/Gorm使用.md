@@ -7,7 +7,7 @@
 - **官方文档**：[GORM - The fantastic ORM library for Golang, aims to be developer friendly.](https://gorm.io/zh_CN/)
 - **开源仓库**：[go-gorm/gorm: The fantastic ORM library for Golang, aims to be developer friendly (github.com)](https://github.com/go-gorm/gorm)
 
-## 特点
+# 特点
 
 1. **全功能 ORM**：涵盖了丰富的数据库操作功能，为开发者提供一站式解决方案。
 2. **关联关系支持**：全面支持多种关联关系，如拥有一个（Has One）、拥有多个（Has Many）、属于（Belongs To）、多对多（Many To Many）、多态（Polymorphism）以及单表继承（Single-table inheritance），满足复杂业务场景下的数据关系建模需求。
@@ -101,11 +101,26 @@ db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 # 模型
 
-在 gorm 中，模型与数据库表相对应，它通常由结构体的方式展现，例如下面的结构体。
+## gorm.Model
+
+为了方便模型定义，GORM内置了一个`gorm.Model`结构体。`gorm.Model`是一个包含了`ID`, `CreatedAt`, `UpdatedAt`, `DeletedAt`四个字段的Golang结构体。
 
 ```go
+// gorm.Model 定义
+type Model struct {
+  ID        uint `gorm:"primary_key"`
+  CreatedAt time.Time
+  UpdatedAt time.Time
+  DeletedAt *time.Time
+}
+```
+
+你可以将它嵌入到你自己的模型中：
+
+```go
+// 将 `ID`, `CreatedAt`, `UpdatedAt`, `DeletedAt`字段注入到`User`模型中
 type User struct {
-    gorm.Model        // 内嵌gorm.Model，包含ID, CreatedAt, UpdatedAt, DeletedAt字段
+    gorm.Model // 内嵌gorm.Model，包含ID, CreatedAt, UpdatedAt, DeletedAt字段    
     Name      string `gorm:"type:varchar(100);not null"`
     Email     string `gorm:"type:varchar(100);uniqueIndex"`
     Age       int    `gorm:"default:18"`
@@ -113,146 +128,356 @@ type User struct {
 }
 ```
 
-**字段标签**
-
-| 标签名                 | 说明                                                         |
-| ---------------------- | ------------------------------------------------------------ |
-| column                 | 指定 db 列名                                                 |
-| type                   | 列数据类型，推荐使用兼容性好的通用类型，例如：所有数据库都支持 bool、int、uint、float、string、time、bytes 并且可以和其他标签一起使用，例如：not null、size, autoIncrement… |
-| serializer             | 指定将数据序列化或反序列化到数据库中的序列化器，例如: serializer:json/gob/unixtime |
-| size                   | 定义列数据类型的大小或长度，例如 size: 256                   |
-| primaryKey             | 将列定义为主键                                               |
-| unique                 | 将列定义为唯一键                                             |
-| default                | 定义列的默认值                                               |
-| precision              | 指定列的精度                                                 |
-| scale                  | 指定列大小                                                   |
-| not null               | 指定列为 NOT NULL                                            |
-| autoIncrement          | 指定列为自动增长                                             |
-| autoIncrementIncrement | 自动步长，控制连续记录之间的间隔                             |
-| embedded               | 嵌套字段                                                     |
-| embeddedPrefix         | 嵌入字段的列名前缀                                           |
-| autoCreateTime         | 创建时追踪当前时间，对于 int 字段，它会追踪时间戳秒数，您可以使用 nano/milli 来追踪纳秒、毫秒时间戳，例如：autoCreateTime:nano |
-| autoUpdateTime         | 创建 / 更新时追踪当前时间，对于 int 字段，它会追踪时间戳秒数，您可以使用 nano/milli 来追踪纳秒、毫秒时间戳，例如：autoUpdateTime:milli |
-| index                  | 根据参数创建索引，多个字段使用相同的名称则创建复合索引，查看 索引 open in new window 获取详情 |
-| uniqueIndex            | 与 index 相同，但创建的是唯一索引                            |
-| check                  | 创建检查约束，例如 check:age > 13，查看 约束 open in new window 获取详情 |
-| <-                     | 设置字段写入的权限， <-:create 只创建、<-:update 只更新、<-:false 无写入权限、<- 创建和更新权限 |
-| ->                     | 设置字段读的权限，->:false 无读权限                          |
-| -                      | 忽略该字段，- 表示无读写，-:migration 表示无迁移权限，-:all 表示无读写迁移权限 |
-| comment                | 迁移时为字段添加注释                                         |
-| foreignKey             | 指定当前模型的列作为连接表的外键                             |
-| references             | 指定引用表的列名，其将被映射为连接表外键                     |
-| polymorphic            | 指定多态类型，比如模型名                                     |
-| polymorphicValue       | 指定多态值、默认表名                                         |
-| many2many              | 指定连接表表名                                               |
-| joinForeignKey         | 指定连接表的外键列名，其将被映射到当前表                     |
-| joinReferences         | 指定连接表的外键列名，其将被映射到引用表                     |
-| constraint             | 关系约束，例如：OnUpdate、OnDelete                           |
-
-# 创建
-
-## Create
-
-在创建新的记录时，大多数情况都会用到`Create`方法
+当然你也可以完全自己定义模型：
 
 ```go
-func (db *DB) Create(value interface{}) (tx *DB)
-```
-
-现有如下的结构体
-
-```go
-type Person struct {
-  Id   uint `gorm:"primaryKey;"`
+// 不使用gorm.Model，自行定义模型
+type User struct {
+  ID   int
   Name string
 }
 ```
 
-创建一条记录
+## 结构体标记（tags）
+
+使用结构体声明模型时，标记（tags）是可选项。gorm支持以下标记:
+
+**支持的结构体标记（Struct tags）**
+
+| 结构体标记（Tag） |                           描述                           |
+| :---------------: | :------------------------------------------------------: |
+|      Column       |                         指定列名                         |
+|       Type        |                      指定列数据类型                      |
+|       Size        |                  指定列大小, 默认值255                   |
+|    PRIMARY_KEY    |                      将列指定为主键                      |
+|      UNIQUE       |                      将列指定为唯一                      |
+|      DEFAULT      |                       指定列默认值                       |
+|     PRECISION     |                        指定列精度                        |
+|     NOT NULL      |                    将列指定为非 NULL                     |
+|  AUTO_INCREMENT   |                   指定列是否为自增类型                   |
+|       INDEX       | 创建具有或不带名称的索引, 如果多个索引同名则创建复合索引 |
+|   UNIQUE_INDEX    |         和 `INDEX` 类似，只不过创建的是唯一索引          |
+|     EMBEDDED      |                     将结构设置为嵌入                     |
+|  EMBEDDED_PREFIX  |                    设置嵌入结构的前缀                    |
+|         -         |                        忽略此字段                        |
+
+**关联相关标记（tags）**
+
+|        结构体标记（Tag）         |                描述                |
+| :------------------------------: | :--------------------------------: |
+|            MANY2MANY             |             指定连接表             |
+|            FOREIGNKEY            |              设置外键              |
+|      ASSOCIATION_FOREIGNKEY      |            设置关联外键            |
+|           POLYMORPHIC            |            指定多态类型            |
+|        POLYMORPHIC_VALUE         |             指定多态值             |
+|       JOINTABLE_FOREIGNKEY       |          指定连接表的外键          |
+| ASSOCIATION_JOINTABLE_FOREIGNKEY |        指定连接表的关联外键        |
+|        SAVE_ASSOCIATIONS         |    是否自动完成 save 的相关操作    |
+|      ASSOCIATION_AUTOUPDATE      |   是否自动完成 update 的相关操作   |
+|      ASSOCIATION_AUTOCREATE      |   是否自动完成 create 的相关操作   |
+|    ASSOCIATION_SAVE_REFERENCE    | 是否自动完成引用的 save 的相关操作 |
+|             PRELOAD              |    是否自动完成预加载的相关操作    |
+
+## 主键、表名、列名的约定
+
+**主键（Primary Key）**
+
+GORM 默认会使用名为ID的字段作为表的主键。
 
 ```go
-user := Person{
-    Name: "jack",
+type User struct {
+  ID   string // 名为`ID`的字段会默认作为表的主键
+  Name string
 }
 
-// 必须传入引用
-db = db.Create(&user)
-
-// 执行过程中发生的错误
-err = db.Error
-// 创建的数目
-affected := db.RowsAffected
+// 使用`AnimalID`作为主键
+type Animal struct {
+  AnimalID int64 `gorm:"primary_key"`
+  Name     string
+  Age      int64
+}
 ```
 
-创建完成后，gorm 会将主键写入 user 结构体中，所以这也是为什么必须得传入指针。如果传入的是一个切片，就会批量创建
+**表名（Table Name）**
+
+表名默认就是结构体名称的复数，例如：
 
 ```go
-user := []Person{
-    {Name: "jack"},
-    {Name: "mike"},
-    {Name: "lili"},
+type User struct {} // 默认表名是 `users`
+
+// 将 User 的表名设置为 `profiles`
+func (User) TableName() string {
+  return "profiles"
 }
 
-db = db.Create(&user)
-```
-
-同样的，gorm 也会将主键写入切片中。当数据量过大时，也可以使用`CreateInBatches`方法分批次创建，因为生成的`INSERT INTO table VALUES (),()`这样的 SQL 语句会变的很长，每个数据库对 SQL 长度是有限制的，所以必要的时候可以选择分批次创建。
-
-```go
-db = db.CreateInBatches(&user, 50)
-```
-
-除此之外，`Save`方法也可以创建记录，它的作用是当主键匹配时就更新记录，否则就插入。
-
-```go
-func (db *DB) Save(value interface{}) (tx *DB)
-```
-
-```go
-user := []Person{
-    {Name: "jack"},
-    {Name: "mike"},
-    {Name: "lili"},
+func (u User) TableName() string {
+  if u.Role == "admin" {
+    return "admin_users"
+  } else {
+    return "users"
+  }
 }
 
-db = db.Save(&user)
+// 禁用默认表名的复数形式，如果置为 true，则 `User` 的默认表名是 `user`
+db.SingularTable(true)
 ```
 
-## Upsert
+也可以通过`Table()`指定表名：
 
-`Save`方法只能是匹配主键，我们可以通过构建`Clause`来完成更加自定义的 upsert。比如下面这行代码
+```go
+// 使用User结构体创建名为`deleted_users`的表
+db.Table("deleted_users").CreateTable(&User{})
 
-```
-db.Clauses(clause.OnConflict{
-    Columns:   []clause.Column{{Name: "name"}},
-    DoNothing: false,
-    DoUpdates: clause.AssignmentColumns([]string{"address"}),
-    UpdateAll: false,
-}).Create(&p)
-```
+var deleted_users []User
+db.Table("deleted_users").Find(&deleted_users)
+//// SELECT * FROM deleted_users;
 
-它的作用是当字段`name`冲突后，更新字段`address`的值，不冲突的话就会创建一个新的记录。也可以在冲突的时候什么都不做
-
-```
-db.Clauses(clause.OnConflict{
-    Columns:   []clause.Column{{Name: "name"}},
-    DoNothing: true,
-}).Create(&p)
+db.Table("deleted_users").Where("name = ?", "jinzhu").Delete()
+//// DELETE FROM deleted_users WHERE name = 'jinzhu';
 ```
 
-或者直接更新所有字段
+GORM还支持更改默认表名称规则：
 
-
-
-```
-db.Clauses(clause.OnConflict{
-    Columns:   []clause.Column{{Name: "name"}},
-    UpdateAll: true,
-}).Create(&p)
+```go
+gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
+  return "prefix_" + defaultTableName;
+}
 ```
 
-在使用 upsert 之前，记得给冲突字段添加索引。
+**列名（Column Name）**
+
+列名由字段名称进行下划线分割来生成
+
+```go
+type User struct {
+  ID        uint      // column name is `id`
+  Name      string    // column name is `name`
+  Birthday  time.Time // column name is `birthday`
+  CreatedAt time.Time // column name is `created_at`
+}
+```
+
+可以使用结构体tag指定列名：
+
+```go
+type Animal struct {
+  AnimalId    int64     `gorm:"column:beast_id"`         // set column name to `beast_id`
+  Birthday    time.Time `gorm:"column:day_of_the_beast"` // set column name to `day_of_the_beast`
+  Age         int64     `gorm:"column:age_of_the_beast"` // set column name to `age_of_the_beast`
+}
+```
+
+## 时间戳跟踪
+
+**CreatedAt**
+
+如果模型有 `CreatedAt`字段，该字段的值将会是初次创建记录的时间。
+
+```go
+db.Create(&user) // `CreatedAt`将会是当前时间
+
+// 可以使用`Update`方法来改变`CreateAt`的值
+db.Model(&user).Update("CreatedAt", time.Now())
+```
+
+**UpdatedAt**
+
+如果模型有`UpdatedAt`字段，该字段的值将会是每次更新记录的时间。
+
+```go
+db.Save(&user) // `UpdatedAt`将会是当前时间
+
+db.Model(&user).Update("name", "jinzhu") // `UpdatedAt`将会是当前时间
+```
+
+**DeletedAt**
+
+如果模型有`DeletedAt`字段，调用`Delete`删除该记录时，将会设置`DeletedAt`字段为当前时间，而不是直接将记录从数据库中删除。
+
+# CRUD接口
+
+简单的列举了，创建、查询、修改、删除的使用，详情可以看[官方文档](https://gorm.io/zh_CN/docs/)。
+
+## 创建 (Create)
+
+```go
+// 创建单个记录
+user := User{Name: "张三", Age: 20}
+result := db.Create(&user) 
+// 执行SQL: INSERT INTO users (name, age) VALUES ('张三', 20);
+
+// 批量创建
+users := []User{
+    {Name: "李四", Age: 22},
+    {Name: "王五", Age: 23},
+}
+db.Create(&users)
+// 执行SQL: INSERT INTO users (name, age) VALUES ('李四', 22), ('王五', 23);
+```
+
+## 查询 (Read)
+
+**单条查询**
+
+```go
+var user User
+db.First(&user)
+// 执行SQL: SELECT * FROM users ORDER BY id LIMIT 1;
+
+db.Where("name = ?", "张三").First(&user)
+// 执行SQL: SELECT * FROM users WHERE name = '张三' ORDER BY id LIMIT 1;
+
+db.First(&user, 10)
+// 执行SQL: SELECT * FROM users WHERE id = 10;
+```
+
+**多条查询**
+
+```go
+var users []User
+db.Where("age > ?", 20).Find(&users)
+// 执行SQL: SELECT * FROM users WHERE age > 20;
+
+db.Where(map[string]interface{}{"name": "张三", "age": 20}).Find(&users)
+// 执行SQL: SELECT * FROM users WHERE name = '张三' AND age = 20;
+```
+
+**高级查询**
+
+```go
+db.Select("name", "age").Find(&users)
+// 执行SQL: SELECT name, age FROM users;
+
+db.Order("age desc").Find(&users)
+// 执行SQL: SELECT * FROM users ORDER BY age DESC;
+
+db.Limit(10).Offset(5).Find(&users)
+// 执行SQL: SELECT * FROM users LIMIT 10 OFFSET 5;
+
+var count int64
+db.Model(&User{}).Where("age > ?", 20).Count(&count)
+// 执行SQL: SELECT COUNT(*) FROM users WHERE age > 20;
+```
+
+## 更新 (Update)
+
+```go
+db.Save(&user)
+// 执行SQL: UPDATE users SET name='张三', age=20 WHERE id=1;
+
+db.Model(&user).Update("name", "李四")
+// 执行SQL: UPDATE users SET name='李四' WHERE id=1;
+
+db.Model(&user).Updates(User{Name: "李四", Age: 21})
+// 执行SQL: UPDATE users SET name='李四', age=21 WHERE id=1;
+
+db.Model(&User{}).Where("age < ?", 20).Update("name", "未成年人")
+// 执行SQL: UPDATE users SET name='未成年人' WHERE age < 20;
+```
+
+## 删除 (Delete)
+
+```go
+db.Delete(&user)
+// 执行SQL: DELETE FROM users WHERE id=1;
+
+db.Delete(&User{}, 10)
+// 执行SQL: DELETE FROM users WHERE id=10;
+
+db.Where("age < ?", 20).Delete(&User{})
+// 执行SQL: DELETE FROM users WHERE age < 20;
+```
+
+# 事务
+
+**自动事务**
+
+```go
+db.Transaction(func(tx *gorm.DB) error {
+    if err := tx.Create(&user1).Error; err != nil {
+        return err
+    }
+    // 执行SQL: INSERT INTO users (name, age) VALUES ('user1', 20);
+    
+    if err := tx.Create(&user2).Error; err != nil {
+        return err
+    }
+    // 执行SQL: INSERT INTO users (name, age) VALUES ('user2', 22);
+    
+    return nil
+})
+// 如果成功执行SQL: COMMIT;
+// 如果失败执行SQL: ROLLBACK;
+```
+
+**手动事务**
+
+```go
+tx := db.Begin()
+// 执行SQL: BEGIN;
+
+tx.Create(&user1)
+// 执行SQL: INSERT INTO users (name, age) VALUES ('user1', 20);
+
+tx.Create(&user2)
+// 执行SQL: INSERT INTO users (name, age) VALUES ('user2', 22);
+
+tx.Commit()
+// 执行SQL: COMMIT;
+
+// 或者出错时
+tx.Rollback()
+// 执行SQL: ROLLBACK;
+```
+
+**嵌套事务**
+
+```go
+db.Transaction(func(tx *gorm.DB) error {
+    tx.Create(&user1)
+    // 执行SQL: INSERT INTO users (name, age) VALUES ('user1', 20);
+    
+    tx.Transaction(func(tx2 *gorm.DB) error {
+        tx2.Create(&user2)
+        // 执行SQL: SAVEPOINT sp1;
+        // 执行SQL: INSERT INTO users (name, age) VALUES ('user2', 22);
+        return errors.New("inner error")
+        // 执行SQL: ROLLBACK TO sp1;
+    })
+    
+    return nil
+    // 执行SQL: COMMIT;
+})
+```
+
+**保存点** (SavePoint)
+
+```go
+tx := db.Begin()
+// 执行SQL: BEGIN;
+
+tx.Create(&user1)
+// 执行SQL: INSERT INTO users (name, age) VALUES ('user1', 20);
+
+tx.SavePoint("sp1")
+// 执行SQL: SAVEPOINT sp1;
+
+tx.Create(&user2)
+// 执行SQL: INSERT INTO users (name, age) VALUES ('user2', 22);
+
+tx.RollbackTo("sp1")
+// 执行SQL: ROLLBACK TO sp1;
+
+tx.Commit()
+// 执行SQL: COMMIT;
+```
 
 > **参考资料**：
 >
+> [GORM 指南](https://gorm.io/zh_CN/docs/)
+>
 > [Golang 中文学习文档 - 第三方库 - GORM](https://golang.halfiisland.com/community/pkgs/orm/gorm.html)
+>
+> [李文周的博客 - GORM入门指南](https://www.liwenzhou.com/posts/Go/gorm/)
+>
+> [李文周的博客 - GORM CRUD指南](https://www.liwenzhou.com/posts/Go/gorm-crud/)

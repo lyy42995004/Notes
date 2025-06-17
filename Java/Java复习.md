@@ -2049,7 +2049,7 @@ f. A final method can be overridden.
 ■ The accessor methods for all three data fields.
 ■ A method named getArea() that returns the area of this triangle.
 ■ A method named getPerimeter() that returns the perimeter of this triangle.
-■ A method named toString() that returns a string description for the triangl
+■ A method named toString() that returns a string description for the triangle.
 ```
 
 For the formula to compute the area of a triangle, see Programming Exercise 2.19. The toString() method is implemented as follows:  
@@ -2227,3 +2227,605 @@ public class TestTriangle {
 }
 ```
 
+# Chapter 12 Exception Handling and Text I/O
+
+## Check Point:
+
+### 12.1 What is the advantage of using exception handling?
+
+**异常处理的优势**：
+
+1. **分离正常逻辑与错误处理**
+   - 用 `try-catch` 将核心代码和错误处理解耦，避免大量 `if-else` 判断。
+2. **提高程序健壮性**
+   - 捕获异常后程序可继续运行（如网络请求失败后重试）。
+3. **精准定位错误**
+   - 异常类型（如 `NullPointerException`）和堆栈信息直接指明问题来源。
+4. **强制处理潜在错误**
+   - 受检异常（如 `IOException`）要求调用方必须处理，减少遗漏。
+5. **灵活的错误传递**
+   - 通过 `throws` 将异常抛给上层，由合适的方法统一处理。
+
+### 12.9 What is the purpose of declaring exceptions? How do you declare an exception, and where? Can you declare multiple exceptions in a method header?
+
+**目的**：声明异常是为了告知调用者该方法可能抛出的异常，强制处理或继续抛出。
+
+**如何声明**：在方法签名后加 `throws 异常类型`，例如：
+
+```java
+void readFile() throws IOException { ... }
+```
+
+**位置**：在方法头（参数列表后）。
+
+**多个异常**：可以，用逗号分隔，例如：
+
+```java
+void foo() throws IOException, SQLException { ... }
+```
+
+### 12.10 What is a checked exception, and what is an unchecked exception?
+
+**受检异常（Checked Exception）**：
+
+- 必须处理（`try-catch`）或声明抛出（`throws`），否则编译报错。
+- 通常是外部错误（如 `IOException`、`SQLException`）。
+
+**非受检异常（Unchecked Exception）**：
+
+- 无需强制处理（如 `RuntimeException` 及其子类）。
+- 通常是程序逻辑错误（如 `NullPointerException`、`ArrayIndexOutOfBoundsException`）。
+
+### 12.11 How do you throw an exception? Can you throw multiple exceptions in one throw statement?
+
+**如何抛出异常**：
+使用 `throw` 关键字，后跟异常对象，例如：
+
+```java
+throw new IOException("文件读取失败");
+```
+
+**能否一次抛出多个异常**：
+❌ ​**​不能​**​。`throw` 一次只能抛出一个异常对象。
+
+（但可通过自定义异常封装多个错误信息，或在不同条件下抛出不同异常。）
+
+### 12.12 What is the keyword throw used for? What is the keyword throws used for?
+
+**`throw`**：
+
+- 用于**手动抛出**一个异常对象（通常是在方法内部）。
+
+- 示例：
+
+  ```java
+  if (file == null) {
+      throw new NullPointerException("文件不能为null");
+  }
+  ```
+
+**`throws`**：
+
+- 用于**声明**方法可能抛出的异常（在方法签名上），调用者需处理或继续抛出。
+
+- 示例：
+
+  ```java
+  void readFile() throws IOException, SQLException { ... }
+  ```
+
+**关键区别**：
+
+- `throw` 是**动作**（抛异常），`throws` 是**声明**（可能抛哪些异常）。
+
+# Chapter 13 Abstract Classes and Interfaces
+
+## Check Point:
+
+### 13.3 True or false?
+
+```
+a. An abstract class can be used just like a nonabstract class except that you cannot use the new operator to create an instance from the abstract class.
+b. An abstract class can be extended.
+c. A subclass of a nonabstract superclass cannot be abstract.
+d. A subclass cannot override a concrete method in a superclass to define it as abstract.
+e. An abstract method must be nonstatic
+```
+
+a. **True**
+
+- 抽象类不能直接实例化（不能用 `new`），但其他用法与非抽象类相同（如继承、方法调用等）。
+
+b. **True**
+
+- 抽象类可以被继承（子类可以是具体类或抽象类）。
+
+c. **False**
+
+- 非抽象父类的子类**可以**是抽象的（例如子类未实现父类所有抽象方法时）。
+
+d. **False**
+
+- 子类**可以**将父类的具体方法重写为抽象方法（使子类成为抽象类）。
+
+e. **True**
+
+- 抽象方法不能是 `static` 的（因为抽象方法需要被子类实现，而 `static` 方法属于类，无法被重写）。
+
+### 13.17 True or false? If a class implements Comparable, the object of the class can invoke the compareTo method.
+
+**True**
+
+- 如果一个类实现了 `Comparable` 接口，那么该类的对象可以调用 `compareTo` 方法。
+- `Comparable` 接口要求实现 `int compareTo(T o)` 方法，用于定义对象的自然排序规则。
+
+### 13.28 Define the terms abstract classes and interfaces. What are the similarities and differences between abstract classes and interfaces?
+
+**抽象类（Abstract Class）**
+
+- **定义**：用 `abstract` 修饰的类，可以包含抽象方法（无实现）和具体方法（有实现）。
+- 特点：
+  - 不能直接实例化（`new`），必须通过子类继承并实现所有抽象方法。
+  - 可以包含成员变量、构造方法、普通方法等。
+
+**接口（Interface）**
+
+- **定义**：用 `interface` 定义的一组抽象方法的集合（Java 8 后也可包含默认方法和静态方法）。
+- 特点：
+  - 所有方法默认是 `public abstract`（隐式修饰），不能包含实例变量（只能是 `public static final` 常量）。
+  - 类通过 `implements` 实现接口，必须重写所有抽象方法（除非自身是抽象类）。
+
+### 13.29 True or false?
+
+```
+a. An interface is compiled into a separate bytecode file.
+b. An interface can have static methods.
+c. An interface can extend one or more interfaces.
+d. An interface can extend an abstract class.
+e. An abstract class can extend an interface.
+```
+
+以下是每个问题的详细解答：
+
+### **a. An interface is compiled into a separate bytecode file.**
+
+✅ **True**
+
+- 接口在编译后生成独立的 `.class` 文件，与普通类相同。
+
+### **b. An interface can have static methods.**
+
+✅ **True**（Java 8+）
+
+- 从 Java 8 开始，接口可以包含静态方法（`static`），例如：
+
+  ```java
+  interface MyInterface {
+      static void helper() { System.out.println("Static method"); }
+  }
+  ```
+
+### **c. An interface can extend one or more interfaces.**
+
+✅ **True**
+
+- 接口支持多继承（`extends`多个接口），例如：
+
+  ```java
+  interface A {}
+  interface B {}
+  interface C extends A, B {} // 合法
+  ```
+
+### **d. An interface can extend an abstract class.**
+
+❌ **False**
+
+- 接口只能继承其他接口（`extends`），**不能继承类**（包括抽象类）。
+
+### **e. An abstract class can extend an interface.**
+
+❌ **False**（表述不准确）
+
+- 抽象类可以**实现**接口（`implements`），但**不能继承**接口（继承用 `extends`，仅用于类或接口）。
+
+- 正确说法：
+
+  ```java
+  abstract class MyClass implements MyInterface {} // 合法
+  ```
+
+## Programming Exercise:
+
+### 13.1 (Triangle class) Design a new Triangle class that extends the abstract GeometricObject class. Draw the UML diagram for the classes Triangle and GeometricObject and then implement the Triangle class. Write a test program that prompts the user to enter three sides of the triangle, a color, and a Boolean value to indicate whether the triangle is filled. The program should create a Triangle object with these sides and set the color and filled properties using the input. The program should display the area, perimeter, color, and true or false to indicate whether it is filled or not.
+
+**GeometricObject**
+
+```markdown
+-------------------------------------------------
+|             <<abstract>> GeometricObject     |
+-------------------------------------------------
+- color: String  
+- filled: boolean  
+- dateCreated: java.util.Date  
+-------------------------------------------------
++ GeometricObject()  
++ GeometricObject(color: String, filled: boolean)  
++ getColor(): String  
++ setColor(String): void  
++ isFilled(): boolean  
++ setFilled(boolean): void  
++ getDateCreated(): java.util.Date  
++ toString(): String  
++ getArea(): double  // abstract  
++ getPerimeter(): double  // abstract  
+-------------------------------------------------
+```
+
+**Triangle**
+
+```markdown
+----------------------------------------
+|              Triangle                |
+----------------------------------------
+- side1: double = 1.0  
+- side2: double = 1.0  
+- side3: double = 1.0  
+----------------------------------------
++ Triangle()  
++ Triangle(double, double, double)  
++ getSide1(): double  
++ getSide2(): double  
++ getSide3(): double  
++ getArea(): double  
++ getPerimeter(): double  
++ toString(): String  
+----------------------------------------
+```
+
+**GeometricObject.java**
+
+```java
+import java.util.Date;
+
+public abstract class GeometricObject {
+    private String color = "white";
+    private boolean filled;
+    private Date dateCreated;
+
+    protected GeometricObject() {
+        dateCreated = new Date();
+    }
+
+    protected GeometricObject(String color, boolean filled) {
+        dateCreated = new Date();
+        this.color = color;
+        this.filled = filled;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public boolean isFilled() {
+        return filled;
+    }
+
+    public void setFilled(boolean filled) {
+        this.filled = filled;
+    }
+
+    public Date getDateCreated() {
+        return dateCreated;
+    }
+
+    public String toString() {
+        return "created on " + dateCreated + "\ncolor: " + color + " and filled: " + filled;
+    }
+
+    public abstract double getArea();
+    public abstract double getPerimeter();
+}
+```
+
+**Triangle.java**
+
+```java
+public class Triangle extends GeometricObject {
+    private double side1 = 1.0;
+    private double side2 = 1.0;
+    private double side3 = 1.0;
+
+    public Triangle() {
+    }
+
+    public Triangle(double side1, double side2, double side3) {
+        this.side1 = side1;
+        this.side2 = side2;
+        this.side3 = side3;
+    }
+
+    public double getSide1() {
+        return side1;
+    }
+
+    public double getSide2() {
+        return side2;
+    }
+
+    public double getSide3() {
+        return side3;
+    }
+
+    @Override
+    public double getArea() {
+        double s = getPerimeter() / 2;
+        return Math.sqrt(s * (s - side1) * (s - side2) * (s - side3));
+    }
+
+    @Override
+    public double getPerimeter() {
+        return side1 + side2 + side3;
+    }
+
+    @Override
+    public String toString() {
+        return "Triangle: side1 = " + side1 + " side2 = " + side2 + " side3 = " + side3;
+    }
+}
+```
+
+**TestTriangle.java**
+
+```java
+import java.util.Scanner;
+
+public class TestTriangle {
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+
+        System.out.print("Enter side1, side2, side3 of the triangle: ");
+        double side1 = input.nextDouble();
+        double side2 = input.nextDouble();
+        double side3 = input.nextDouble();
+
+        System.out.print("Enter the color of the triangle: ");
+        String color = input.next();
+
+        System.out.print("Is the triangle filled (true/false)? ");
+        boolean filled = input.nextBoolean();
+
+        Triangle triangle = new Triangle(side1, side2, side3);
+        triangle.setColor(color);
+        triangle.setFilled(filled);
+
+        System.out.println("\n" + triangle);
+        System.out.printf("Area: %.2f\n", triangle.getArea());
+        System.out.printf("Perimeter: %.2f\n", triangle.getPerimeter());
+        System.out.println("Color: " + triangle.getColor());
+        System.out.println("Filled: " + triangle.isFilled());
+    }
+}
+```
+
+### 13.6 (The ComparableCircle class) Define a class named ComparableCircle that extends Circle and implements Comparable. Draw the UML diagram and implement the compareTo method to compare the circles on the basis of area. Write a test class to find the larger of two instances of ComparableCircle objects.
+
+**Circle**
+
+```markdown
+--------------------------------
+|           Circle             |
+--------------------------------
+- radius: double  
+--------------------------------
++ Circle()  
++ Circle(radius: double)  
++ getRadius(): double  
++ setRadius(double): void  
++ getArea(): double  
++ getPerimeter(): double  
++ toString(): String  
+--------------------------------
+```
+
+**ComparableCircle**
+
+```markdown
+-----------------------------------------
+|        ComparableCircle               |
+-----------------------------------------
+<<extends>> Circle  
+<<implements>> Comparable<ComparableCircle>
+-----------------------------------------
++ ComparableCircle()  
++ ComparableCircle(radius: double)  
++ compareTo(o: ComparableCircle): int  
+-----------------------------------------
+```
+
+**Circle.java**
+
+```java
+public class Circle {
+    private double radius;
+
+    public Circle() {
+        this.radius = 1.0;
+    }
+
+    public Circle(double radius) {
+        this.radius = radius;
+    }
+
+    public double getRadius() {
+        return radius;
+    }
+
+    public void setRadius(double radius) {
+        this.radius = radius;
+    }
+
+    public double getArea() {
+        return Math.PI * radius * radius;
+    }
+
+    public double getPerimeter() {
+        return 2 * Math.PI * radius;
+    }
+
+    public String toString() {
+        return "Circle with radius = " + radius;
+    }
+}
+```
+
+**ComparableCircle.java**
+
+```java
+public class ComparableCircle extends Circle implements Comparable<ComparableCircle> {
+
+    public ComparableCircle() {
+        super();
+    }
+
+    public ComparableCircle(double radius) {
+        super(radius);
+    }
+
+    @Override
+    public int compareTo(ComparableCircle o) {
+        // 比较面积大小
+        if (this.getArea() > o.getArea()) return 1;
+        else if (this.getArea() < o.getArea()) return -1;
+        else return 0;
+    }
+}
+```
+
+**TestComparableCircle.java**
+
+```java
+public class TestComparableCircle {
+    public static void main(String[] args) {
+        ComparableCircle c1 = new ComparableCircle(5.0);
+        ComparableCircle c2 = new ComparableCircle(3.0);
+
+        System.out.println("Circle 1 area: " + c1.getArea());
+        System.out.println("Circle 2 area: " + c2.getArea());
+
+        ComparableCircle larger = (c1.compareTo(c2) > 0) ? c1 : c2;
+
+        System.out.println("The larger circle is: " + larger);
+    }
+}
+```
+
+### 13.7 (The Colorable interface) Design an interface named Colorable with a void method named howToColor(). Every class of a colorable object must implement the Colorable interface. Design a class named Square that extends GeometricObject and implements Colorable. Implement howToColor to display the message Color all four sides. 
+
+Draw a UML diagram that involves Colorable, Square, and GeometricObject. Write a test program that creates an array of five GeometricObjects. For each object in the array, display its area and invoke its howToColor method if it is colorable.
+
+```markdown
+            ┌──────────────────────┐
+            │     GeometricObject   │
+            └──────────────────────┘
+                        ▲
+                        │
+            ┌──────────────────────┐
+            │        Square         │
+            ├──────────────────────┤
+            │ - side: double        │
+            ├──────────────────────┤
+            │ + getArea(): double   │
+            │ + howToColor(): void  │
+            └──────────────────────┘
+                        ▲
+                        │
+        ┌──────────────────────────────┐
+        │          Colorable            │
+        ├──────────────────────────────┤
+        │ + howToColor(): void          │
+        └──────────────────────────────┘
+```
+
+**Colorable.java**
+
+```java
+public interface Colorable {
+    void howToColor();
+}
+```
+
+**GeometricObject.java**
+
+```java
+public abstract class GeometricObject {
+    public abstract double getArea();
+}
+```
+
+ **Square.java**
+
+```java
+public class Square extends GeometricObject implements Colorable {
+    private double side;
+
+    public Square() {
+        this.side = 1.0;
+    }
+
+    public Square(double side) {
+        this.side = side;
+    }
+
+    public double getSide() {
+        return side;
+    }
+
+    public void setSide(double side) {
+        this.side = side;
+    }
+
+    @Override
+    public double getArea() {
+        return side * side;
+    }
+
+    @Override
+    public void howToColor() {
+        System.out.println("Color all four sides.");
+    }
+}
+```
+
+**TestColorable.java**
+
+```java
+public class TestColorable {
+    public static void main(String[] args) {
+        GeometricObject[] objects = new GeometricObject[5];
+
+        // 创建 5 个图形对象，有些是正方形，有些可以是匿名类或其他图形
+        objects[0] = new Square(2);
+        objects[1] = new Square(4);
+        objects[2] = new Square(3);
+        objects[3] = new Square(5);
+        objects[4] = new Square(6);
+
+        for (int i = 0; i < objects.length; i++) {
+            System.out.println("Object " + (i + 1) + " area: " + objects[i].getArea());
+            if (objects[i] instanceof Colorable) {
+                ((Colorable) objects[i]).howToColor();
+            }
+            System.out.println();
+        }
+    }
+}
+```
+
+# URL图示例
+
+![image-20250610144423786](C:/Users/42995004/AppData/Roaming/Typora/typora-user-images/image-20250610144423786.png)
