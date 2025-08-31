@@ -1,6 +1,60 @@
+# 单例模式
+
+**饿汉**
+
+```go
+package singleton
+
+type EagerSingleton struct {
+}
+
+// 在包初始化时就创建实例
+var eagerInstance = &EagerSingleton{}
+
+// 获取单例实例的函数
+func GetEagerInstance() *EagerSingleton {
+    return eagerInstance
+}
+
+// 示例方法
+func (s *EagerSingleton) DoSomething() {
+    println("EagerSingleton do something")
+}
+```
+
+**懒汉**
+
+```go
+package singleton
+
+import "sync"
+
+type SafeLazySingleton struct {
+}
+
+var (
+    safeLazyInstance *SafeLazySingleton
+    once             sync.Once
+)
+
+// 线程安全的获取实例方法
+func GetSafeLazyInstance() *SafeLazySingleton {
+    once.Do(func() {
+        safeLazyInstance = &SafeLazySingleton{}
+        println("SafeLazySingleton instance created")
+    })
+    return safeLazyInstance
+}
+
+// 示例方法
+func (s *SafeLazySingleton) DoSomething() {
+    println("SafeLazySingleton do something")
+}
+```
+
 # 多协程打印abc
 
-## channel
+**channel**
 
 ```go
 package main
@@ -43,7 +97,7 @@ func main() {
 }
 ```
 
-## 有锁
+**有锁**
 
 ```go
 package main
@@ -85,7 +139,7 @@ func main() {
 }
 ```
 
-## 无锁
+**无锁**
 
 ```go
 package main

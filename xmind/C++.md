@@ -1,42 +1,6 @@
-# 字符串函数
-
-## strcpy()
-
-```cpp
-char *strcpy(char *strDest, const char* strSrc) {
-    assert(strDest && strSrc);
-    char *addr = strDest;
-    while ((*strDest++ = *strSrc++) != '\0') {};
-    return addr
-}
-```
-
-## strlen()
-
-```cpp
-int strlen(const char *str) {
-    assert(str != NULL);
-    int len = 0;
-    while ((*str++) != '\0')
-        len++;
-   	return len;
-}
-```
-
-## strcmp()
-
-```cpp
-int strcmp(const char* str1, const char* str2) {
-    assert(str1 && str2);
-    while (*str1 && *str2 && (*str1 == *str2))
-        str1++, str2++;
-    return *str1 - str2;
-}
-```
-
 # 智能指针
 
-## auto_ptr
+**auto_ptr**
 
 ```cpp
 template <typename T>
@@ -68,7 +32,7 @@ private:
 };
 ```
 
-## unique_ptr
+**unique_ptr**
 
 ```cpp
 template <typename T>
@@ -105,7 +69,7 @@ private:
 };
 ```
 
-## shared_ptr
+**shared_ptr**
 
 ```cpp
 template <typename T>
@@ -152,7 +116,7 @@ private:
 };
 ```
 
-## weak_ptr
+**weak_ptr**
 
 ```cpp
 template <class T>
@@ -176,209 +140,159 @@ private:
 };
 ```
 
-# LRU 缓存
+# 单例模式
+
+**饿汉**
 
 ```cpp
-#include <unordered_map>
 #include <iostream>
-using namespace std;
 
-struct Node {
-    int key, value;
-    Node* next, *prev;
-    Node() : key(0), value(0), next(nullptr), prev(nullptr) {}
-    Node(int key_, int value_)
-    : key(key_), value(value_),  next(nullptr), prev(nullptr) {}
-};
-
-class LRUCache {
+class EagerSingleton {
+private:
+    // 静态成员变量，在程序启动时就已经初始化
+    static EagerSingleton instance;
+    
+    // 私有构造函数，防止外部实例化
+    EagerSingleton() {
+        std::cout << "EagerSingleton instance created" << std::endl;
+    }
+    
+    // 防止拷贝和赋值
+    EagerSingleton(const EagerSingleton&) = delete;
+    EagerSingleton& operator=(const EagerSingleton&) = delete;
+    
 public:
-    LRUCache(int capacity) : size_(0), capacity_(capacity) {
-        head_ = new Node();
-        tail_ = new Node();
-        head_->next = tail_;
-        tail_->prev = head_;
-    }
-
-    ~LRUCache() {
-        Node* cur = head_;
-        while (cur) {
-            Node* next = cur->next;
-            delete cur;
-            cur = next;
-        }
+    // 获取单例实例的静态方法
+    static EagerSingleton& getInstance() {
+        return instance;
     }
     
-    int get(int key) {
-        if (!hash_.count(key)) {
-            return -1;
-        }
-        Node* node = hash_[key];
-        moveToHead(node);
-        return node->value;
+    void doSomething() {
+        std::cout << "EagerSingleton do something" << std::endl;
     }
-    
-    void put(int key, int value) {
-        if (hash_.count(key)) {
-            Node* node = hash_[key];
-            node->value = value;
-            moveToHead(node);
-        } else {
-            size_++;
-            Node* node = new Node(key, value);
-            hash_[key] = node;
-            addToHead(node);
-            if (size_ > capacity_) {
-                Node* tail = removeTail();
-                hash_.erase(tail->key);
-                delete tail;
-                size_--;
-            }
-        }
-    }
-
-private:
-    void removeNode(Node* node) {
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-    }
-
-    void addToHead(Node* node) {
-        Node* head = head_->next;
-        head_->next = node;
-        node->prev = head_;
-        node->next = head;
-        head->prev = node;
-    }
-
-    void moveToHead(Node* node) {
-        removeNode(node);
-        addToHead(node);
-    }
-
-    Node* removeTail() {
-        Node* tail = tail_->prev;
-        removeNode(tail);
-        return tail;
-    }
-
-private:
-    Node* head_, *tail_;
-    unordered_map<int, Node*> hash_;
-    int size_, capacity_;
 };
 
+// 在类外初始化静态成员变量
+EagerSingleton EagerSingleton::instance;
+
+// 使用示例
 int main() {
-    LRUCache* lrucache = new LRUCache(2);
-
-    // 1 -1 -1 3 4
-    lrucache->put(1, 1);                // 缓存是 {1=1}
-    lrucache->put(2, 2);                // 缓存是 {1=1, 2=2}
-    cout << lrucache->get(1) << " ";    // 返回 1
-    lrucache->put(3, 3);                // 该操作会使得关键字 2 作废，缓存是 {1=1, 3=3}
-    cout << lrucache->get(2) << " ";    // 返回 -1 (未找到)
-    lrucache->put(4, 4);                // 该操作会使得关键字 1 作废，缓存是 {4=4, 3=3}
-    cout << lrucache->get(1) << " ";    // 返回 -1 (未找到)
-    cout << lrucache->get(3) << " ";    // 返回 3
-    cout << lrucache->get(4) << " ";    // 返回 4
-    cout << endl;
-
+    EagerSingleton::getInstance().doSomething();
     return 0;
 }
 ```
 
-# 单例模式
-
-## 饿汉
+**懒汉**
 
 ```cpp
-class Singleton {
-public:
-    static Singleton& getInstance() {
-        return instance;
-    }
-
-private:
-    Singleton() {}
-    Singleton(const Singleton&) = delete;
-    Singleton& operator=(const Singleton&) = delete;
-
-    static Singleton instance;
-};
-
-Singleton Singleton::instance;
-```
-
-## 懒汉
-
-```cpp
+#include <iostream>
 #include <mutex>
 
-class Singleton {
+class ThreadSafeLazySingleton {
+private:
+    static ThreadSafeLazySingleton* instance;
+    static std::mutex mtx;
+    
+    ThreadSafeLazySingleton() {
+        std::cout << "ThreadSafeLazySingleton instance created" << std::endl;
+    }
+    
+    ThreadSafeLazySingleton(const ThreadSafeLazySingleton&) = delete;
+    ThreadSafeLazySingleton& operator=(const ThreadSafeLazySingleton&) = delete;
+    
 public:
-    static Singleton* getInstance() {
-        if (instance == nullptr) {                 // 第一次判空
+    static ThreadSafeLazySingleton* getInstance() {
+        // 第一次检查，避免不必要的锁开销
+        if (instance == nullptr) {
             std::lock_guard<std::mutex> lock(mtx);
-            if (instance == nullptr) {             // 第二次判空
-                instance = new Singleton();
+            // 第二次检查，确保只有一个线程创建实例
+            if (instance == nullptr) {
+                instance = new ThreadSafeLazySingleton();
             }
         }
         return instance;
     }
     
-    // static Singleton* getInstance() {
-    //     // C++11 保证局部静态变量初始化线程安全
-    //     static Singleton instance;
-    //     return &instance;
-    // }
-
-private:
-    Singleton() {}
-    Singleton(const Singleton&) = delete;
-    Singleton& operator=(const Singleton&) = delete;
-    
-    static Singleton* instance;
-    static std::mutex mtx;
+    void doSomething() {
+        std::cout << "ThreadSafeLazySingleton do something" << std::endl;
+    }
 };
 
-Singleton* Singleton::instance = nullptr;
-std::mutex Singleton::mtx;
+// 初始化静态成员变量
+ThreadSafeLazySingleton* ThreadSafeLazySingleton::instance = nullptr;
+std::mutex ThreadSafeLazySingleton::mtx;
+
+// 使用示例
+int main() {
+    ThreadSafeLazySingleton::getInstance()->doSomething();
+    return 0;
+}
+```
+
+```cpp
+#include <iostream>
+
+class Cpp11LazySingleton {
+private:
+    Cpp11LazySingleton() {
+        std::cout << "Cpp11LazySingleton instance created" << std::endl;
+    }
+    
+    Cpp11LazySingleton(const Cpp11LazySingleton&) = delete;
+    Cpp11LazySingleton& operator=(const Cpp11LazySingleton&) = delete;
+    
+public:
+    static Cpp11LazySingleton& getInstance() {
+        // C++11保证局部静态变量的初始化是线程安全的
+        static Cpp11LazySingleton instance;
+        return instance;
+    }
+    
+    void doSomething() {
+        std::cout << "Cpp11LazySingleton do something" << std::endl;
+    }
+};
+
+// 使用示例
+int main() {
+    Cpp11LazySingleton::getInstance().doSomething();
+    return 0;
+}
 ```
 
 # 线程池
 
 ```cpp
-#pragma once
 #include <iostream>
-#include <thread>
 #include <vector>
-#include <functional>
 #include <queue>
+#include <functional>
+#include <thread>
 #include <mutex>
-#include <condition_variable>
 #include <atomic>
+#include <condition_variable>
 
 class ThreadPool {
 public:
-    explicit ThreadPool(size_t thread_count) : stop_(false) {
-        for (size_t i = 0; i < thread_count; ++i) {
-            workers_.emplace_back([this] {
+    explicit ThreadPool(size_t cnt) : stop(false) {
+        for (size_t i = 0; i < cnt; i++) {
+            workers.emplace_back([this] {
                 while (true) {
                     std::function<void()> task;
                     {
-                        std::unique_lock<std::mutex> lock(mtx_);
-                        cond_.wait(lock, [this] {
-                            return stop_ || !tasks_.empty();
+                        std::unique_lock<std::mutex> lock(mtx);
+                        // 防止虚假唤醒
+                        cond.wait(lock, [this] {
+                            return stop || !tasks.empty();
                         });
-
-                        if (stop_ && tasks_.empty()) {
+                        // 检查停止
+                        if (stop && tasks.empty()) {
                             return;
                         }
-
-                        task = std::move(tasks_.front());
-                        tasks_.pop();
+                        task = tasks.front();
+                        tasks.pop();
                     }
-                    task();  // 执行任务
+                    task();
                 }
             });
         }
@@ -386,35 +300,52 @@ public:
 
     ~ThreadPool() {
         {
-            std::lock_guard<std::mutex> lock(mtx_);
-            stop_ = true;
+            std::lock_guard<std::mutex> lock(mtx);
+            stop = true;
         }
-        cond_.notify_all();  // 唤醒所有线程
-        for (std::thread &worker : workers_) {
-            worker.join();  // 等待线程结束
+        cond.notify_all();
+        for (std::thread& worker : workers) {
+            worker.join();
         }
     }
 
-    void addTask(const std::function<void()>& task) {
+    void addTask(const std::function<void()>& f) {
         {
-            std::lock_guard<std::mutex> lock(mtx_);
-            tasks_.push(task);
+            std::lock_guard<std::mutex> lock(mtx);
+            tasks.push(f);
         }
-        cond_.notify_one();  // 唤醒一个线程
+        cond.notify_one();
     }
 
 private:
-    std::vector<std::thread> workers_;
-    std::queue<std::function<void()>> tasks_;
-    std::mutex mtx_;
-    std::condition_variable cond_;
-    std::atomic<bool> stop_;
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+    std::mutex mtx;
+    std::condition_variable cond;
+    std::atomic<bool> stop;
 };
+
+int main() {
+    ThreadPool p(4);
+
+    // 添加带ID的任务
+    for (int i = 0; i < 5; ++i) {
+        p.addTask([i] {  // 捕获i
+            std::cout << "Task " << i << " started on thread " 
+                      << std::this_thread::get_id() << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::cout << "Task " << i << " finished" << std::endl;
+        });
+    }
+    
+    // 等待所有任务完成
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
 ```
 
 # 多线程打印abc
 
-## 有锁
+**有锁**
 
 **mutex + condition_variable**
 
@@ -453,7 +384,7 @@ int main() {
 }
 ```
 
-## 无锁
+**无锁**
 
 **atomic + 自旋**
 
