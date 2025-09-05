@@ -436,9 +436,7 @@ type Server struct {
 
 - **客户端定期发送心跳**：客户端每隔一定时间发送`HEAT_BEAT`类型消息
 
-- 服务端响应与超时处理
-
-  ：在`Client.Read()`方法中专门处理心跳：
+- 服务端响应与超时处理：在`Client.Read()`方法中专门处理心跳：
 
   ```go
   if msg.Type == constant.HEAT_BEAT {
@@ -450,7 +448,7 @@ type Server struct {
       c.Conn.WriteMessage(websocket.BinaryMessage, pongBytes)
   }
   ```
-
+  
   如果长时间未收到心跳（可通过`ReadTimeout`配置），连接会被自动关闭并从`Clients`中移除，避免资源泄漏。
 
 3. 读写分离与 goroutine 隔离
@@ -562,6 +560,92 @@ case conn := <-s.Ungister:
 - **网络分区**：通过 WebSocket 的心跳机制（`Read()`中的`PongHandler`）检测连接存活，超时未响应会触发读协程错误退出
 - **消息发送失败**：写协程发送消息时若出现错误（如客户端已离线），会直接退出并关闭连接
 - **资源泄漏防护**：所有协程均通过`defer`确保连接关闭，避免因 panic 导致的资源泄漏
+
+
+
+**谁向server发送的用户的上线和下线channel发送的消息？**
+
+1. 上线消息（Register channel）的发送方
+
+当客户端通过 WebSocket 建立连接时，由路由层的连接初始化逻辑发送上线消息：
+
+- **触发点**：`router/socket.go`的`RunSocket`函数
+
+  ```go
+  // 建立WebSocket连接后，创建Client实例并发送到Register通道
+  client := &server.Client{
+      Name: user,
+      Conn: ws,
+      Send: make(chan []byte),
+  }
+  server.MyServer.Register <- client  // 发送上线消息
+  ```
+
+- **调用时机**：客户端通过`ws://xxx?user={uuid}`连接时，路由层验证用户标识有效后，主动将客户端实例推入`Register`通道，触发服务器的上线处理逻辑。
+
+2. 下线消息（Ungister channel）的发送方
+
+下线消息主要由客户端的读协程在连接异常时触发，存在两种发送场景：
+
+（1）读协程正常退出时发送
+
+- 触发点：client.go的`Read`方法中的`defer`语句
+
+  ```go
+  func (c *Client) Read() {
+      defer func() {
+          MyServer.Ungister <- c  // 连接关闭前发送下线消息
+          c.Conn.Close()
+      }()
+      // 循环读取消息...
+  }
+  ```
+
+  当客户端主动断开连接或网络异常导致`ReadMessage`返回错误时，读协程退出并执行`defer`逻辑，将客户端实例推入`Ungister`通道。
+
+（2）读消息异常时主动发送
+
+- 触发点：client.go的`Read`方法中错误处理分支
+
+  ```go
+  _, message, err := c.Conn.ReadMessage()
+  if err != nil {
+      log.Error("client read message error", log.Err(err))
+      MyServer.Ungister <- c  // 读取错误时立即发送下线消息
+      c.Conn.Close()
+      break
+  }
+  ```
+
+  当读取消息发生错误（如连接中断），会直接发送下线消息并关闭连接，避免资源泄漏。
+
+3. 上下线消息的处理流程
+
+服务器在server.go的`Start`方法中循环监听这两个通道，完成状态维护：
+
+```go
+func (s *Server) Start() {
+    for {
+        select {
+        case conn := <-s.Register:  // 处理上线
+            s.Clients[conn.Name] = conn  // 添加到在线列表
+            // 发送欢迎消息...
+        case conn := <-s.Ungister:  // 处理下线
+            if _, ok := s.Clients[conn.Name]; ok {
+                close(conn.Send)
+                delete(s.Clients, conn.Name)  // 从在线列表移除
+            }
+        // ...其他逻辑
+        }
+    }
+}
+```
+
+**总结**
+
+- **上线消息**：由路由层在 WebSocket 连接建立成功后主动发送，触发源是客户端的连接请求
+- **下线消息**：由客户端的读协程在连接异常或正常退出时发送，触发源是连接中断事件
+- 这种设计通过 "连接层触发 + 服务器处理" 的模式，确保用户在线状态的实时更新，为消息推送和状态管理提供准确的依据。
 
 
 
